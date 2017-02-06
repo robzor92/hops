@@ -69,6 +69,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   private final String MTAB_FILE = "/proc/mounts";
   private final String CGROUPS_FSTYPE = "cgroup";
   private final String CONTROLLER_CPU = "cpu";
+  private final String CONTROLLER_DEVICES = "devices";
   private final String CPU_PERIOD_US = "cfs_period_us";
   private final String CPU_QUOTA_US = "cfs_quota_us";
   private final int CPU_DEFAULT_WEIGHT = 1024; // set by kernel
@@ -146,6 +147,8 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       ArrayList<String> cgroupKVs = new ArrayList<String>();
       cgroupKVs.add(CONTROLLER_CPU + "=" + cgroupMountPath + "/" +
                     CONTROLLER_CPU);
+      cgroupKVs.add(CONTROLLER_DEVICES + "=" + cgroupMountPath + "/" +
+                    CONTROLLER_DEVICES);
       lce.mountCgroups(cgroupKVs, cgroupPrefix);
     }
 
@@ -477,25 +480,44 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   }
 
   private void initializeControllerPaths() throws IOException {
-    String controllerPath;
+    String cpuControllerPath;
+    String devicesControllerPath;
     Map<String, List<String>> parsedMtab = parseMtab();
 
     // CPU
 
-    controllerPath = findControllerInMtab(CONTROLLER_CPU, parsedMtab);
+    cpuControllerPath = findControllerInMtab(CONTROLLER_CPU, parsedMtab);
 
-    if (controllerPath != null) {
-      File f = new File(controllerPath + "/" + this.cgroupPrefix);
+    if (cpuControllerPath != null) {
+      File f = new File(cpuControllerPath + "/" + this.cgroupPrefix);
 
       if (FileUtil.canWrite(f)) {
-        controllerPaths.put(CONTROLLER_CPU, controllerPath);
+        controllerPaths.put(CONTROLLER_CPU, cpuControllerPath);
       } else {
         throw new IOException("Not able to enforce cpu weights; cannot write "
-            + "to cgroup at: " + controllerPath);
+            + "to cgroup at: " + cpuControllerPath);
       }
     } else {
       throw new IOException("Not able to enforce cpu weights; cannot find "
           + "cgroup for cpu controller in " + getMtabFileName());
+    }
+
+    // GPU
+
+    devicesControllerPath = findControllerInMtab(CONTROLLER_DEVICES, parsedMtab);
+
+    if (devicesControllerPath != null) {
+      File f = new File(cpuControllerPath + "/" + this.cgroupPrefix);
+
+      if (FileUtil.canWrite(f)) {
+        controllerPaths.put(CONTROLLER_DEVICES, devicesControllerPath);
+      } else {
+        throw new IOException("Not able to restrict device access; cannot write "
+                + "to cgroup at: " + devicesControllerPath);
+      }
+    } else {
+      throw new IOException("Not able to restrict device access; cannot find "
+              + "cgroup for cpu controller in " + getMtabFileName());
     }
   }
 
