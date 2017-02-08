@@ -22,7 +22,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -31,6 +30,8 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -49,6 +50,8 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor;
+import org.apache.hadoop.yarn.server.nodemanager.util.devices.Device;
+import org.apache.hadoop.yarn.server.nodemanager.util.devices.GPUAllocator;
 import org.apache.hadoop.yarn.util.Clock;
 import org.apache.hadoop.yarn.util.ResourceCalculatorPlugin;
 import org.apache.hadoop.yarn.util.SystemClock;
@@ -65,6 +68,9 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
 
   private boolean cpuWeightEnabled = true;
   private boolean strictResourceUsageMode = false;
+
+  private boolean gpuSupportEnabled = false;
+  private GPUAllocator gpuAllocator;
 
   private final String MTAB_FILE = "/proc/mounts";
   private final String CGROUPS_FSTYPE = "cgroup";
@@ -87,6 +93,8 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   public CgroupsLCEResourcesHandler() {
     this.controllerPaths = new HashMap<String, String>();
     clock = new SystemClock();
+
+    gpuAllocator = new GPUAllocator();
   }
 
   @Override
@@ -224,6 +232,8 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   boolean isCpuWeightEnabled() {
     return this.cpuWeightEnabled;
   }
+
+  boolean isGpuSupportEnabled() { return this.gpuSupportEnabled; }
 
   /*
    * Next four functions are for an individual cgroup.
@@ -384,11 +394,49 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
         }
       }
     }
+
+    int containerGPUs = 0;
+    if(isGpuSupportEnabled() && containerGPUs > 0) {
+      createCgroup(CONTROLLER_DEVICES, containerName);
+      //denied should be called before allocated
+      
+      HashMap<String, HashSet<Device>> cGroupDeviceAccess =
+          gpuAllocator.allocate(containerName, containerGPUs);
+      
+      HashSet<Device> deniedDevices = cGroupDeviceAccess.get("deny");
+
+      String cgroupGPUDenyEntries = createCgroupDeviceEntry(deniedDevices);
+      updateCgroup(CONTROLLER_DEVICES, containerName, "deny",
+          cgroupGPUDenyEntries);
+  
+      HashSet<Device> allowedDevices = cGroupDeviceAccess.get("allow");
+      HashSet<Device> mandatoryDevices = gpuAllocator.getMandatoryDevices();
+            
+      String cgroupAllowedDevices = createCgroupDeviceEntry(allowedDevices);
+      String cgroupMandatoryDevices = createCgroupDeviceEntry(mandatoryDevices);
+      
+      updateCgroup(CONTROLLER_DEVICES, containerName, "allow",
+          cgroupAllowedDevices + cgroupMandatoryDevices);
+    }
+  }
+
+  private String createCgroupDeviceEntry(HashSet devices) {
+    StringBuilder cgroupDeviceEntries = new StringBuilder();
+    Iterator<Device> itr = devices.iterator();
+    while(itr.hasNext()) {
+      cgroupDeviceEntries.append("c " + itr.next().toString() + " rwm\n");
+    }
+    return cgroupDeviceEntries.toString();
   }
 
   private void clearLimits(ContainerId containerId) {
     if (isCpuWeightEnabled()) {
       deleteCgroup(pathForCgroup(CONTROLLER_CPU, containerId.toString()));
+    }
+    
+    if(isGpuSupportEnabled()) {
+      gpuAllocator.release(containerId.toString());
+      deleteCgroup(pathForCgroup(CONTROLLER_DEVICES, containerId.toString()));
     }
   }
 
