@@ -17,5 +17,41 @@
  */
 package org.apache.hadoop.yarn.server.nodemanager.util.devices;
 
+import java.util.Objects;
+
 public class Device {
+  
+  private int majorDeviceNumber;
+  private int minorDeviceNumber;
+  
+  public Device(int majorDeviceNumber, int minorDeviceNumber) {
+    this.majorDeviceNumber = majorDeviceNumber;
+    this.minorDeviceNumber = minorDeviceNumber;
+  }
+  
+  public boolean equals(Object otherObj) {
+    Device otherGpu = (Device)otherObj;
+    if(this.getMajorDeviceNumber() == otherGpu.getMajorDeviceNumber()
+        && this.getMinorDeviceNumber() == otherGpu.getMinorDeviceNumber()) {
+      return true;
+    }
+    return false;
+  }
+  
+  public int hashCode() {
+    return Objects.hash(minorDeviceNumber, majorDeviceNumber);
+  }
+  
+  public int getMajorDeviceNumber() {
+    return majorDeviceNumber;
+  }
+  
+  public int getMinorDeviceNumber() {
+    return minorDeviceNumber;
+  }
+  
+  public String toString() {
+    return majorDeviceNumber + ":" + minorDeviceNumber;
+  }
+  
 }
