@@ -364,6 +364,15 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     }
     return deleted;
   }
+  
+  private String createCgroupDeviceEntry(HashSet devices) {
+    StringBuilder cgroupDeviceEntries = new StringBuilder();
+    Iterator<Device> itr = devices.iterator();
+    while(itr.hasNext()) {
+      cgroupDeviceEntries.append("c " + itr.next().toString() + " rwm\n");
+    }
+    return cgroupDeviceEntries.toString();
+  }
 
   /*
    * Next three functions operate on all the resources we are enforcing.
@@ -420,23 +429,14 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     }
   }
 
-  private String createCgroupDeviceEntry(HashSet devices) {
-    StringBuilder cgroupDeviceEntries = new StringBuilder();
-    Iterator<Device> itr = devices.iterator();
-    while(itr.hasNext()) {
-      cgroupDeviceEntries.append("c " + itr.next().toString() + " rwm\n");
-    }
-    return cgroupDeviceEntries.toString();
-  }
-
   private void clearLimits(ContainerId containerId) {
     if (isCpuWeightEnabled()) {
       deleteCgroup(pathForCgroup(CONTROLLER_CPU, containerId.toString()));
     }
     
     if(isGpuSupportEnabled()) {
-      gpuAllocator.release(containerId.toString());
       deleteCgroup(pathForCgroup(CONTROLLER_DEVICES, containerId.toString()));
+      gpuAllocator.release(containerId.toString());
     }
   }
 
@@ -460,6 +460,10 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
 
     if (isCpuWeightEnabled()) {
       sb.append(pathForCgroup(CONTROLLER_CPU, containerName) + "/tasks");
+      sb.append(",");
+    }
+    if (isGpuSupportEnabled()) {
+      sb.append(pathForCgroup(CONTROLLER_DEVICES, containerName) + "/tasks");
       sb.append(",");
     }
 
@@ -495,13 +499,14 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
 
       for (String str = in.readLine(); str != null;
           str = in.readLine()) {
+        System.out.println(str);
         Matcher m = MTAB_FILE_FORMAT.matcher(str);
         boolean mat = m.find();
         if (mat) {
           String path = m.group(1);
           String type = m.group(2);
           String options = m.group(3);
-
+          System.out.println(type);
           if (type.equals(CGROUPS_FSTYPE)) {
             List<String> value = Arrays.asList(options.split(","));
             ret.put(path, value);
@@ -533,7 +538,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     Map<String, List<String>> parsedMtab = parseMtab();
 
     // CPU
-
+    
     cpuControllerPath = findControllerInMtab(CONTROLLER_CPU, parsedMtab);
 
     if (cpuControllerPath != null) {
@@ -555,7 +560,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     devicesControllerPath = findControllerInMtab(CONTROLLER_DEVICES, parsedMtab);
 
     if (devicesControllerPath != null) {
-      File f = new File(cpuControllerPath + "/" + this.cgroupPrefix);
+      File f = new File(devicesControllerPath + "/" + this.cgroupPrefix);
 
       if (FileUtil.canWrite(f)) {
         controllerPaths.put(CONTROLLER_DEVICES, devicesControllerPath);
@@ -565,7 +570,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       }
     } else {
       throw new IOException("Not able to restrict device access; cannot find "
-              + "cgroup for cpu controller in " + getMtabFileName());
+              + "cgroup for devices controller in " + getMtabFileName());
     }
   }
 
