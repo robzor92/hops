@@ -22,6 +22,15 @@ public class GPUAllocator {
   }
   
   /**
+   * Intialize the NVML library to check that it was setup correctly and that
+   * the application is allowed
+   * @return boolean for
+   */
+  public boolean isGPUSupportEnabled() {
+    return NvidiaManagementLibrary.initialize();
+  }
+  
+  /**
    * Queries NVML to discover device numbers for mandatory driver devices that
    * all GPU containers should have access to
    *
@@ -32,7 +41,8 @@ public class GPUAllocator {
    */
   //TODO pattern match validator, expecting device numbers to be on form of (major:minor)
   private void initMandatoryDevices() {
-    String[] mandatoryDeviceIds = NvidiaManagementLibrary.getMandatoryDeviceIds();
+    String[] mandatoryDeviceIds = NvidiaManagementLibrary
+        .queryMandatoryDevices().split(" ");
     for(int i = 0; i < mandatoryDeviceIds.length; i++) {
       String[] majorMinorPair = mandatoryDeviceIds[i].split(":");
       mandatoryDevices.add(new Device(
@@ -44,11 +54,11 @@ public class GPUAllocator {
   /**
    * Queries NVML to discover device numbers for available Nvidia gpus that
    * may be scheduled and isolated for containers
-   *
    */
   //TODO pattern match validator, expecting device numbers to be on form of (major:minor)
   private void initAvailableDevices() {
-    String[] availableDeviceIds = NvidiaManagementLibrary.getAvailableDeviceIds();
+    String[] availableDeviceIds = NvidiaManagementLibrary
+        .queryAvailableDevices().split(" ");
     for(int i = 0; i < availableDeviceIds.length; i++) {
       String[] majorMinorPair = availableDeviceIds[i].split(":");
       availableDevices.add(new Device(Integer.parseInt
@@ -60,7 +70,8 @@ public class GPUAllocator {
    * Returns the mandatory devices that all containers making use of Nvidia
    * gpus should be given access to
    *
-   * @return mandatory devices for containers making use of gpus
+   * @return HashSet containing mandatory devices for containers making use of
+   * gpus
    */
   public HashSet<Device> getMandatoryDevices() {
     return mandatoryDevices;
@@ -71,7 +82,7 @@ public class GPUAllocator {
    *
    * @return HashSet containing devices currently allocated to containers
    */
-  public HashSet<Device> getAllocatedGPUs() {
+  private HashSet<Device> getAllocatedGPUs() {
     HashSet<Device> allocatedGPUs = new HashSet<>();
     Collection<HashSet<Device>> gpuSets = containerDeviceAllocation.values();
     Iterator<HashSet<Device>> itr = gpuSets.iterator();
