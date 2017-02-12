@@ -24,12 +24,20 @@ public class GPUAllocator {
   /**
    * Intialize the NVML library to check that it was setup correctly and that
    * the application is allowed
-   * @return boolean for
+   * @return boolean for success or not
    */
-  public boolean isGPUSupportEnabled() {
+  public boolean initialize() {
     return NvidiaManagementLibrary.initialize();
   }
-  
+
+  /**
+   * Shut down NVML by releasing all GPU resources previously allocated with nvmlInit()
+   * @return boolean for success or not
+   */
+  public boolean shutDown() {
+    return NvidiaManagementLibrary.shutDown();
+  }
+
   /**
    * Queries NVML to discover device numbers for mandatory driver devices that
    * all GPU containers should have access to
