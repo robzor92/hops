@@ -95,6 +95,8 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     clock = new SystemClock();
 
     gpuAllocator = new GPUAllocator();
+    gpuSupportEnabled = gpuAllocator.initialize();
+
   }
 
   @Override
