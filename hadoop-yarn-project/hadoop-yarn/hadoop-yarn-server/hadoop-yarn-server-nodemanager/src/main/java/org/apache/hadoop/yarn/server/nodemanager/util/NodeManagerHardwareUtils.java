@@ -88,4 +88,10 @@ public class NodeManagerHardwareUtils {
     }
     return nodeCpuPercentage;
   }
+  
+  public static int getNodeGPUs(ResourceCalculatorPlugin plugin,
+      Configuration conf) {
+    //TODO Make this number configurable (OS-query or configurable)
+    return plugin.getNumGPUs();
+  }
 }

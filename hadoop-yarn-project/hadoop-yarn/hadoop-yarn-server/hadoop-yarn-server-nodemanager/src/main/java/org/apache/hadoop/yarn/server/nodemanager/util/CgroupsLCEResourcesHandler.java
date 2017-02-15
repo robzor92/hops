@@ -40,6 +40,8 @@ import java.util.regex.Pattern;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import io.hops.Device;
+import io.hops.GPUAllocator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,8 +52,6 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor;
-import org.apache.hadoop.yarn.server.nodemanager.util.devices.Device;
-import org.apache.hadoop.yarn.server.nodemanager.util.devices.GPUAllocator;
 import org.apache.hadoop.yarn.util.Clock;
 import org.apache.hadoop.yarn.util.ResourceCalculatorPlugin;
 import org.apache.hadoop.yarn.util.SystemClock;
@@ -93,9 +93,13 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   public CgroupsLCEResourcesHandler() {
     this.controllerPaths = new HashMap<String, String>();
     clock = new SystemClock();
-
-    gpuAllocator = new GPUAllocator();
-    gpuSupportEnabled = gpuAllocator.initialize();
+  
+    try {
+      gpuAllocator = new GPUAllocator();
+      gpuSupportEnabled = gpuAllocator.initialize();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
 
   }
 

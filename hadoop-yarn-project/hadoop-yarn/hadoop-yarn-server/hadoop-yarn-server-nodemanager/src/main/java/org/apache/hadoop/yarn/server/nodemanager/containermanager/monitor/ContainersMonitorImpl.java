@@ -75,6 +75,8 @@ public class ContainersMonitorImpl extends AbstractService implements
   private boolean vmemCheckEnabled;
 
   private long maxVCoresAllottedForContainers;
+  
+  private int maxGPUsAllottedForContainers;
 
   private static final long UNKNOWN_MEMORY_LIMIT = -1L;
   private int nodeCpuPercentageForYARN;
@@ -128,6 +130,8 @@ public class ContainersMonitorImpl extends AbstractService implements
     long configuredVCoresForContainers = conf.getLong(
         YarnConfiguration.NM_VCORES,
         YarnConfiguration.DEFAULT_NM_VCORES);
+    
+    int configuredGPUsForContainers = resourceCalculatorPlugin.getNumGPUs();
 
 
     // Setting these irrespective of whether checks are enabled. Required in
@@ -135,6 +139,7 @@ public class ContainersMonitorImpl extends AbstractService implements
     // ///////// Physical memory configuration //////
     this.maxPmemAllottedForContainers = configuredPMemForContainers;
     this.maxVCoresAllottedForContainers = configuredVCoresForContainers;
+    this.maxGPUsAllottedForContainers = configuredGPUsForContainers;
 
     // ///////// Virtual memory configuration //////
     float vmemRatio = conf.getFloat(YarnConfiguration.NM_VMEM_PMEM_RATIO,

@@ -28,6 +28,9 @@ import java.nio.charset.Charset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.hops.GPUManagementLibrary;
+import io.hops.GPUManagementLibraryLoader;
+import io.hops.exceptions.GPUManagementLibraryException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
@@ -90,6 +93,10 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
 
   boolean readMemInfoFile = false;
   boolean readCpuInfoFile = false;
+  
+  private GPUManagementLibrary gpuManagementLibrary;
+  private static final String GPU_MANAGEMENT_LIBRARY_CLASSNAME = "io.hops" +
+      ".metadata.nvidia.NvidiaManagementLibrary";
 
   /**
    * Get current time
@@ -102,6 +109,14 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   public LinuxResourceCalculatorPlugin() {
     this(PROCFS_MEMFILE, PROCFS_CPUINFO, PROCFS_STAT,
         ProcfsBasedProcessTree.JIFFY_LENGTH_IN_MILLIS);
+  
+    try {
+      gpuManagementLibrary = GPUManagementLibraryLoader.load
+          (GPU_MANAGEMENT_LIBRARY_CLASSNAME);
+      gpuManagementLibrary.initialize();
+    } catch (GPUManagementLibraryException e) {
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -352,7 +367,13 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
     }
     return overallCpuUsage;
   }
-
+  
+  /** {@inheritDoc} */
+  @Override
+  public int getNumGPUs() {
+    return gpuManagementLibrary.getNumGPUs();
+  }
+  
   /**
    * Test the {@link LinuxResourceCalculatorPlugin}
    *

@@ -1,4 +1,6 @@
-package org.apache.hadoop.yarn.server.nodemanager.util.devices;
+package io.hops;
+
+import io.hops.exceptions.GPUManagementLibraryException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -11,11 +13,23 @@ public class GPUAllocator {
   private HashSet<Device> availableDevices;
   private HashMap<String, HashSet<Device>> containerDeviceAllocation;
   private HashSet<Device> mandatoryDevices;
+  private GPUManagementLibrary gpuManagementLibrary;
+  private static final String GPU_MANAGEMENT_LIBRARY_CLASSNAME = "io.hops" +
+      ".management.nvidia.NvidiaManagementLibrary";
   
-  public GPUAllocator() {
+  public GPUAllocator() throws IOException {
     availableDevices = new HashSet<>();
     containerDeviceAllocation = new HashMap<>();
     mandatoryDevices = new HashSet<>();
+    
+    System.out.println(System.getProperty("java.library.path"));
+    
+    try {
+      gpuManagementLibrary =
+          GPUManagementLibraryLoader.load(GPU_MANAGEMENT_LIBRARY_CLASSNAME);
+    } catch(GPUManagementLibraryException gpue) {
+      throw new IOException(gpue);
+    }
     
     initMandatoryDevices();
     initAvailableDevices();
@@ -27,7 +41,7 @@ public class GPUAllocator {
    * @return boolean for success or not
    */
   public boolean initialize() {
-    return NvidiaManagementLibrary.initialize();
+    return gpuManagementLibrary.initialize();
   }
 
   /**
@@ -35,7 +49,7 @@ public class GPUAllocator {
    * @return boolean for success or not
    */
   public boolean shutDown() {
-    return NvidiaManagementLibrary.shutDown();
+    return gpuManagementLibrary.shutDown();
   }
 
   /**
@@ -49,7 +63,7 @@ public class GPUAllocator {
    */
   //TODO pattern match validator, expecting device numbers to be on form of (major:minor)
   private void initMandatoryDevices() {
-    String[] mandatoryDeviceIds = NvidiaManagementLibrary
+    String[] mandatoryDeviceIds = gpuManagementLibrary
         .queryMandatoryDevices().split(" ");
     for(int i = 0; i < mandatoryDeviceIds.length; i++) {
       String[] majorMinorPair = mandatoryDeviceIds[i].split(":");
@@ -65,12 +79,13 @@ public class GPUAllocator {
    */
   //TODO pattern match validator, expecting device numbers to be on form of (major:minor)
   private void initAvailableDevices() {
-    String[] availableDeviceIds = NvidiaManagementLibrary
+    String[] availableDeviceIds = gpuManagementLibrary
         .queryAvailableDevices().split(" ");
     for(int i = 0; i < availableDeviceIds.length; i++) {
       String[] majorMinorPair = availableDeviceIds[i].split(":");
-      availableDevices.add(new Device(Integer.parseInt
-          (majorMinorPair[0]), Integer.parseInt(majorMinorPair[1])));
+      availableDevices.add(new Device(
+          Integer.parseInt(majorMinorPair[0]),
+          Integer.parseInt(majorMinorPair[1])));
     }
   }
   
@@ -157,5 +172,17 @@ public class GPUAllocator {
     HashSet<Device> deviceAllocation = containerDeviceAllocation.get(containerName);
     availableDevices.addAll(deviceAllocation);
     containerDeviceAllocation.remove(containerName);
+  }
+  
+  public static void main(String[] args) {
+    try {
+      GPUAllocator gpuAllocator = new GPUAllocator();
+      gpuAllocator.initialize();
+      gpuAllocator.getMandatoryDevices();
+      
+      
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 }

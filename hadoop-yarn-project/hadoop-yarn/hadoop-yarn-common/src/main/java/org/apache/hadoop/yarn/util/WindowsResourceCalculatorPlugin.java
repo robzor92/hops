@@ -23,6 +23,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
+import org.apache.hadoop.crypto.UnsupportedCodecException;
 import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.Shell.ShellCommandExecutor;
 import org.apache.hadoop.util.StringUtils;
@@ -166,5 +167,11 @@ public class WindowsResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   public float getCpuUsage() {
     refreshIfNeeded();
     return cpuUsage;
+  }
+  
+  @Override
+  public int getNumGPUs() {
+    throw new  UnsupportedCodecException("Not supporting Windows with GPUs " +
+        "yet");
   }
 }
