@@ -1,12 +1,13 @@
-package io.hops;
+package io.hops.devices;
 
 
 
+import io.hops.GPUManagementLibrary;
+import io.hops.GPUManagementLibraryLoader;
 import io.hops.exceptions.GPUManagementLibraryException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.server.nodemanager.util.CgroupsLCEResourcesHandler;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -55,10 +56,16 @@ public class GPUAllocator {
    * @return boolean for success or not
    */
   public boolean initialize() {
-    initialized = gpuManagementLibrary.initialize();
-    initMandatoryDevices();
-    initAvailableDevices();
-    return initialized;
+    if(initialized == false) {
+      initialized = gpuManagementLibrary.initialize();
+      initMandatoryDevices();
+      initAvailableDevices();
+    }
+    return this.initialized;
+  }
+  
+  public boolean isInitialized() {
+    return this.initialized;
   }
 
   /**
@@ -199,17 +206,12 @@ public class GPUAllocator {
    * extract allocated GPU devices
    * @param devicesAllowStr
    */
-  public synchronized void recoverAllocation(ContainerId containerId, String
+  public synchronized void recoverAllocation(String containerId, String
       devicesAllowStr) {
     HashSet<Device> allocatedGPUsForContainer = findGPUDevices(devicesAllowStr);
-    if(allocatedGPUsForContainer.isEmpty()) {
-      LOG.error("Attempting to restore GPUs when no GPUs were allowed in " +
-          "devices.allow for container " + containerId);
-    }
     availableDevices.removeAll(allocatedGPUsForContainer);
     containerDeviceAllocation.put(containerId.toString(),
         allocatedGPUsForContainer);
-    
   }
   
   /* We are looking for entries of the form:
@@ -243,9 +245,5 @@ public class GPUAllocator {
       }
     }
     return devices;
-  }
-  
-  public static void main(String[] args) {
-    
   }
 }
