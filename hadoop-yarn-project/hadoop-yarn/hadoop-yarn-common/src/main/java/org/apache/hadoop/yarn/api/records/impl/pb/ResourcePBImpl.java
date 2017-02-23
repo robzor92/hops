@@ -78,7 +78,17 @@ public class ResourcePBImpl extends Resource {
     maybeInitBuilder();
     builder.setVirtualCores((vCores));
   }
-
+  
+  @Override
+  public void setGPUs(int gpus) {
+    
+  }
+  
+  @Override
+  public int getGPUs() {
+    return 0;
+  }
+  
   @Override
   public int compareTo(Resource other) {
     int diff = this.getMemory() - other.getMemory();

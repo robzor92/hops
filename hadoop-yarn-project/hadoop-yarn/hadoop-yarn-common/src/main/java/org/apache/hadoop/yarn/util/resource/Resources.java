@@ -49,7 +49,17 @@ public class Resources {
     public void setVirtualCores(int cores) {
       throw new RuntimeException("NONE cannot be modified!");
     }
-
+  
+    @Override
+    public void setGPUs(int gpus) {
+    
+    }
+  
+    @Override
+    public int getGPUs() {
+      return 0;
+    }
+  
     @Override
     public int compareTo(Resource o) {
       int diff = 0 - o.getMemory();
@@ -82,7 +92,17 @@ public class Resources {
     public void setVirtualCores(int cores) {
       throw new RuntimeException("NONE cannot be modified!");
     }
-
+  
+    @Override
+    public void setGPUs(int gpus) {
+    
+    }
+  
+    @Override
+    public int getGPUs() {
+      return 0;
+    }
+  
     @Override
     public int compareTo(Resource o) {
       int diff = 0 - o.getMemory();

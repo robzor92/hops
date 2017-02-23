@@ -19,6 +19,7 @@
 package org.apache.hadoop.mapred.gridmix;
 
 import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.crypto.UnsupportedCodecException;
 import org.apache.hadoop.yarn.util.ResourceCalculatorPlugin;
 
 /**
@@ -104,5 +105,10 @@ public class DummyResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   @Override
   public float getCpuUsage() {
     return getConf().getFloat(CPU_USAGE, -1);
+  }
+  
+  @Override
+  public int getNumGPUs() {
+    throw new UnsupportedCodecException("Does not support GPUs");
   }
 }
