@@ -19,20 +19,26 @@ package io.hops.devices;
 
 import io.hops.GPUManagementLibrary;
 import io.hops.exceptions.GPUManagementLibraryException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class GPUManagementLibraryLoader {
+
+  final static Log LOG = LogFactory.getLog(GPUManagementLibraryLoader.class);
   
   public static GPUManagementLibrary load(String classStr) throws GPUManagementLibraryException {
     GPUManagementLibrary gpuManagementLibrary = null;
     try {
-      gpuManagementLibrary = (GPUManagementLibrary)Class.forName(classStr)
-          .newInstance();
+      gpuManagementLibrary = (GPUManagementLibrary) Class.forName(classStr)
+              .newInstance();
     } catch (ClassNotFoundException e) {
       throw new GPUManagementLibraryException(e);
     } catch (IllegalAccessException e) {
       throw new GPUManagementLibraryException(e);
     } catch (InstantiationException e) {
       throw new GPUManagementLibraryException(e);
+    } catch (UnsatisfiedLinkError e) {
+      LOG.warn("Could not load JNI library for GPU");
     }
     return gpuManagementLibrary;
   }

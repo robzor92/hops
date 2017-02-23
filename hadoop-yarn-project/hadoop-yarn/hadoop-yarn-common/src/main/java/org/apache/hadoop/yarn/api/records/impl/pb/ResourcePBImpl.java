@@ -78,15 +78,16 @@ public class ResourcePBImpl extends Resource {
     maybeInitBuilder();
     builder.setVirtualCores((vCores));
   }
-  
+
   @Override
-  public void setGPUs(int gpus) {
-    
+  public int getGPUs() {
+    ResourceProtoOrBuilder p = viaProto ? proto : builder;
+    return 0;
   }
   
   @Override
-  public int getGPUs() {
-    return 0;
+  public void setGPUs(int gpus) {
+
   }
   
   @Override
@@ -94,6 +95,9 @@ public class ResourcePBImpl extends Resource {
     int diff = this.getMemory() - other.getMemory();
     if (diff == 0) {
       diff = this.getVirtualCores() - other.getVirtualCores();
+      if(diff == 0) {
+        diff = this.getGPUs() - other.getGPUs();
+      }
     }
     return diff;
   }

@@ -17,6 +17,8 @@
  */
 package org.apache.hadoop.yarn.server.nodemanager.util;
 
+import io.hops.GPUManagementLibrary;
+import io.hops.devices.GPUAllocator;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Resource;
@@ -186,8 +188,12 @@ public class TestCgroupsLCEResourcesHandler {
     handler.init(mockLCE, plugin);
     File periodFile = new File(cgroupMountDir, "cpu.cfs_period_us");
     File quotaFile = new File(cgroupMountDir, "cpu.cfs_quota_us");
+    File devicesAllowFile = new File(cgroupMountDir, "devices.allow");
+    File devicesDenyFile = new File(cgroupMountDir, "devices.deny");
     Assert.assertFalse(periodFile.exists());
     Assert.assertFalse(quotaFile.exists());
+    Assert.assertFalse(devicesAllowFile.exists());
+    Assert.assertFalse(devicesDenyFile.exists());
 
     // subset of cpu being used, files should be created
     conf
@@ -264,7 +270,7 @@ public class TestCgroupsLCEResourcesHandler {
 
   private File createMockMTab(File cgroupDir) throws IOException {
     String mtabContent =
-        "none " + cgroupDir.getAbsolutePath() + " cgroup rw,relatime,cpu 0 0";
+        "none " + cgroupDir.getAbsolutePath() + " cgroup rw,relatime,cpu,devices 0 0";
     File mockMtab = new File("target", UUID.randomUUID().toString());
     if (!mockMtab.exists()) {
       if (!mockMtab.createNewFile()) {
@@ -365,6 +371,73 @@ public class TestCgroupsLCEResourcesHandler {
     Assert.assertEquals(1000 * 1000, readIntFromFile(quotaFile));
 
     FileUtils.deleteQuietly(cgroupDir);
+  }
+
+  @Test
+  public void testContainerLimitsGPU() throws IOException {
+    LinuxContainerExecutor mockLCE = new MockLinuxContainerExecutor();
+    CustomCgroupsLCEResourceHandler handler =
+            new CustomCgroupsLCEResourceHandler();
+    handler.generateLimitsMode = true;
+    YarnConfiguration conf = new YarnConfiguration();
+    final int numGPUs = 4;
+    ResourceCalculatorPlugin plugin =
+            Mockito.mock(ResourceCalculatorPlugin.class);
+    Mockito.doReturn(numGPUs).when(plugin).getNumGPUs();
+    handler.setConf(conf);
+    handler.initConfig();
+
+    // create mock cgroup
+    File cgroupMountDir = createMockCgroupMount(cgroupDir);
+
+    // create mock mtab
+    File mockMtab = createMockMTab(cgroupDir);
+
+    // setup our handler and call init()
+    handler.setMtabFile(mockMtab.getAbsolutePath());
+    handler.init(mockLCE, plugin);
+
+    CustomGPUManagementLibrary customGPUManagementLibrary = new CustomGPUManagementLibrary();
+    GPUAllocator gpuAllocator = new GPUAllocator(customGPUManagementLibrary);
+
+    ContainerId id = ContainerId.fromString("container_1_1_1_1");
+    handler.preExecute(id, Resource.newInstance(1024, 1, 8));
+    File containerDir = new File(cgroupMountDir, id.toString());
+    Assert.assertTrue(containerDir.exists());
+    Assert.assertTrue(containerDir.isDirectory());
+    File allowFile = new File(containerDir, "devices.allow");
+    File denyFile = new File(containerDir, "devices.deny");
+    Assert.assertTrue(allowFile.exists());
+    Assert.assertTrue(denyFile.exists());
+
+  }
+
+  class CustomGPUManagementLibrary implements GPUManagementLibrary {
+
+    @Override
+    public boolean initialize() {
+      return true;
+    }
+
+    @Override
+    public boolean shutDown() {
+      return true;
+    }
+
+    @Override
+    public int getNumGPUs() {
+      return 8;
+    }
+
+    @Override
+    public String queryMandatoryDevices() {
+      return "0:1 0:2 0:3";
+    }
+
+    @Override
+    public String queryAvailableDevices() {
+      return "195:0 195:1 195:2 195:3 195:4 195:6 195:7";
+    }
   }
 
 }

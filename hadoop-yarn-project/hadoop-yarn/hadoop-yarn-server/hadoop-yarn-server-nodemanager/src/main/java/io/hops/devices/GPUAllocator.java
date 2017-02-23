@@ -2,6 +2,7 @@ package io.hops.devices;
 
 
 
+import com.google.common.annotations.VisibleForTesting;
 import io.hops.GPUManagementLibrary;
 import io.hops.GPUManagementLibraryLoader;
 import io.hops.exceptions.GPUManagementLibraryException;
@@ -34,7 +35,7 @@ public class GPUAllocator {
   public static GPUAllocator getInstance(){
     return gpuAllocator;
   }
-  
+
   private GPUAllocator() {
     availableDevices = new HashSet<>();
     containerDeviceAllocation = new HashMap<>();
@@ -43,12 +44,18 @@ public class GPUAllocator {
     try {
       gpuManagementLibrary =
           GPUManagementLibraryLoader.load(GPU_MANAGEMENT_LIBRARY_CLASSNAME);
+          initialize();
     } catch(GPUManagementLibraryException gpue) {
       LOG.info("Could not locate libhops-nvml.so, no GPUs will be offered " +
           "by this NM");
     }
-    
-    initialize();
+
+  }
+
+  @VisibleForTesting
+  public GPUAllocator(GPUManagementLibrary gpuManagementLibrary) {
+    this.gpuManagementLibrary = gpuManagementLibrary;
+    this.initialized = true;
   }
   
   /**

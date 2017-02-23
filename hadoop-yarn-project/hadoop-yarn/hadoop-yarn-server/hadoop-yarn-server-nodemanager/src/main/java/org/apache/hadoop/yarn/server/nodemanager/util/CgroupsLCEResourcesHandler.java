@@ -385,6 +385,8 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   private void setupLimits(ContainerId containerId,
       Resource containerResource) throws IOException {
     String containerName = containerId.toString();
+
+    System.out.println("requesting" + containerResource.getGPUs() + " gpus") ;
     
     if (isCpuWeightEnabled()) {
       int containerVCores = containerResource.getVirtualCores();
@@ -408,10 +410,10 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       }
     }
     
-    int containerGPUs = containerResource.getGPUs();
+    int containerGPUs = 2;
     if(isGpuSupportEnabled() && containerGPUs > 0) {
       createCgroup(CONTROLLER_DEVICES, containerName);
-      //denied should be called before allocated
+
       
       HashMap<String, HashSet<Device>> cGroupDeviceAccess =
           gpuAllocator.allocate(containerName, containerGPUs);
@@ -450,6 +452,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   
   public void preExecute(ContainerId containerId, Resource containerResource)
       throws IOException {
+    System.out.println(containerResource.getMemory());
     setupLimits(containerId, containerResource);
   }
   
@@ -528,14 +531,13 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       
       for (String str = in.readLine(); str != null;
            str = in.readLine()) {
-        System.out.println(str);
+        System.out.println("entry " + str);
         Matcher m = MTAB_FILE_FORMAT.matcher(str);
         boolean mat = m.find();
         if (mat) {
           String path = m.group(1);
           String type = m.group(2);
           String options = m.group(3);
-          System.out.println(type);
           if (type.equals(CGROUPS_FSTYPE)) {
             List<String> value = Arrays.asList(options.split(","));
             ret.put(path, value);
@@ -572,7 +574,6 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     
     if (cpuControllerPath != null) {
       File f = new File(cpuControllerPath + "/" + this.cgroupPrefix);
-      
       if (FileUtil.canWrite(f)) {
         controllerPaths.put(CONTROLLER_CPU, cpuControllerPath);
       } else {
