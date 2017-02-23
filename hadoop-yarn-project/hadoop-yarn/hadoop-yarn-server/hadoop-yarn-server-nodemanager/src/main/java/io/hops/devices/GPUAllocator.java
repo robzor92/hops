@@ -1,47 +1,64 @@
 package io.hops;
 
+
+
 import io.hops.exceptions.GPUManagementLibraryException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.server.nodemanager.util.CgroupsLCEResourcesHandler;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GPUAllocator {
   
+  private static final GPUAllocator gpuAllocator = new GPUAllocator();
+  final static Log LOG = LogFactory.getLog(GPUAllocator.class);
+
   private HashSet<Device> availableDevices;
   private HashMap<String, HashSet<Device>> containerDeviceAllocation;
   private HashSet<Device> mandatoryDevices;
   private GPUManagementLibrary gpuManagementLibrary;
   private static final String GPU_MANAGEMENT_LIBRARY_CLASSNAME = "io.hops" +
       ".management.nvidia.NvidiaManagementLibrary";
+  private static final int NVIDIA_GPU_MAJOR_DEVICE_NUMBER = 195;
+  private boolean initialized = false;
   
-  public GPUAllocator() throws IOException {
+  public static GPUAllocator getInstance(){
+    return gpuAllocator;
+  }
+  
+  private GPUAllocator() {
     availableDevices = new HashSet<>();
     containerDeviceAllocation = new HashMap<>();
     mandatoryDevices = new HashSet<>();
-    
-    System.out.println(System.getProperty("java.library.path"));
     
     try {
       gpuManagementLibrary =
           GPUManagementLibraryLoader.load(GPU_MANAGEMENT_LIBRARY_CLASSNAME);
     } catch(GPUManagementLibraryException gpue) {
-      throw new IOException(gpue);
+      LOG.info("Could not locate libhops-nvml.so, no GPUs will be offered " +
+          "by this NM");
     }
     
-    initMandatoryDevices();
-    initAvailableDevices();
+    initialize();
   }
   
   /**
-   * Intialize the NVML library to check that it was setup correctly and that
-   * the application is allowed
+   * Initialize the NVML library to check that it was setup correctly
    * @return boolean for success or not
    */
   public boolean initialize() {
-    return gpuManagementLibrary.initialize();
+    initialized = gpuManagementLibrary.initialize();
+    initMandatoryDevices();
+    initAvailableDevices();
+    return initialized;
   }
 
   /**
@@ -49,7 +66,10 @@ public class GPUAllocator {
    * @return boolean for success or not
    */
   public boolean shutDown() {
-    return gpuManagementLibrary.shutDown();
+    if(initialized) {
+      return gpuManagementLibrary.shutDown();
+    }
+    return false;
   }
 
   /**
@@ -83,9 +103,8 @@ public class GPUAllocator {
         .queryAvailableDevices().split(" ");
     for(int i = 0; i < availableDeviceIds.length; i++) {
       String[] majorMinorPair = availableDeviceIds[i].split(":");
-      availableDevices.add(new Device(
-          Integer.parseInt(majorMinorPair[0]),
-          Integer.parseInt(majorMinorPair[1])));
+      availableDevices.add(new Device(Integer.parseInt
+          (majorMinorPair[0]), Integer.parseInt(majorMinorPair[1])));
     }
   }
   
@@ -169,20 +188,64 @@ public class GPUAllocator {
    * @param containerName
    */
   public synchronized void release(String containerName) {
-    HashSet<Device> deviceAllocation = containerDeviceAllocation.get(containerName);
+    HashSet<Device> deviceAllocation = containerDeviceAllocation.
+        get(containerName);
     availableDevices.addAll(deviceAllocation);
     containerDeviceAllocation.remove(containerName);
   }
+   
+  /**
+   * Given the containerId and the Cgroup contents for devices.allow
+   * extract allocated GPU devices
+   * @param devicesAllowStr
+   */
+  public synchronized void recoverAllocation(ContainerId containerId, String
+      devicesAllowStr) {
+    HashSet<Device> allocatedGPUsForContainer = findGPUDevices(devicesAllowStr);
+    if(allocatedGPUsForContainer.isEmpty()) {
+      LOG.error("Attempting to restore GPUs when no GPUs were allowed in " +
+          "devices.allow for container " + containerId);
+    }
+    availableDevices.removeAll(allocatedGPUsForContainer);
+    containerDeviceAllocation.put(containerId.toString(),
+        allocatedGPUsForContainer);
+    
+  }
+  
+  /* We are looking for entries of the form:
+   * c 195:0 rwm
+   *
+   * Use a simple pattern that splits on the two spaces, and
+   * grabs the 2nd field
+   */
+  private static final Pattern DEVICES_ALLOW_FORMAT = Pattern.compile(
+      "([^\\s]+)+\\s([\\d+:\\d]+)+\\s([^\\s]+)");
+  
+  /**
+   * Find GPU devices in the contents of the devices.allow file
+   * This method is used in the recovery process and will only filter out the
+   * Nvidia GPUs (major device number 195)
+   * @param devicesAllowStr
+   * @return
+   */
+  private HashSet<Device> findGPUDevices(String devicesAllowStr) {
+    HashSet<Device> devices = new HashSet<>();
+  
+    Matcher m = DEVICES_ALLOW_FORMAT.matcher(devicesAllowStr);
+  
+    while (m.find()) {
+      String majorMinorDeviceNumber = m.group(2);
+      String[] majorMinorPair = majorMinorDeviceNumber.split(":");
+      int majorDeviceNumber = Integer.parseInt(majorMinorPair[0]);
+      if(majorDeviceNumber == NVIDIA_GPU_MAJOR_DEVICE_NUMBER) {
+        int minorDeviceNumber = Integer.parseInt(majorMinorPair[1]);
+        devices.add(new Device(majorDeviceNumber, minorDeviceNumber));
+      }
+    }
+    return devices;
+  }
   
   public static void main(String[] args) {
-    try {
-      GPUAllocator gpuAllocator = new GPUAllocator();
-      gpuAllocator.initialize();
-      gpuAllocator.getMandatoryDevices();
-      
-      
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    
   }
 }
