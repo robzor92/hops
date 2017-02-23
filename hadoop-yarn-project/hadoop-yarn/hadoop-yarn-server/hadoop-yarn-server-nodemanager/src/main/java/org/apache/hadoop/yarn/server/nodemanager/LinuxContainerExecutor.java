@@ -195,6 +195,8 @@ public class LinuxContainerExecutor extends ContainerExecutor {
     resourcesHandler.init(this);
   }
   
+  
+  
   @Override
   public void startLocalizer(Path nmPrivateContainerTokensPath,
       InetSocketAddress nmAddr, String user, String appId, String locId,
@@ -246,7 +248,13 @@ public class LinuxContainerExecutor extends ContainerExecutor {
       		" (exitCode=" + exitCode + ") with output: " + shExec.getOutput(), e);
     }
   }
-
+  
+  @Override
+  public void recoverDeviceControlSystem() {
+    resourcesHandler.recoverDeviceControlSystem();
+    
+  }
+  
   @VisibleForTesting
   public void buildMainArgs(List<String> command, String user, String appId,
       String locId, InetSocketAddress nmAddr, List<String> localDirs) {

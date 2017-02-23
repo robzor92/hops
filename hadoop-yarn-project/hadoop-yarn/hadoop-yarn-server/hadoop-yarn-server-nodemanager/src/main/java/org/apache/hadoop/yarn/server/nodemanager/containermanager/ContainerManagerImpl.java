@@ -158,6 +158,8 @@ public class ContainerManagerImpl extends CompositeService implements
   private final ContainersLauncher containersLauncher;
   private final AuxServices auxiliaryServices;
   private final NodeManagerMetrics metrics;
+  
+  private final ContainerExecutor exec;
 
   private final NodeStatusUpdater nodeStatusUpdater;
 
@@ -192,6 +194,8 @@ public class ContainerManagerImpl extends CompositeService implements
 
     containersLauncher = createContainersLauncher(context, exec);
     addService(containersLauncher);
+    
+    this.exec = exec;
 
     this.nodeStatusUpdater = nodeStatusUpdater;
     this.aclsManager = aclsManager;
@@ -245,11 +249,13 @@ public class ContainerManagerImpl extends CompositeService implements
     super.serviceInit(conf);
     recover();
   }
-
   @SuppressWarnings("unchecked")
-  private void recover() throws IOException, URISyntaxException {
+  private void recover() throws IOException,
+      URISyntaxException {
     NMStateStoreService stateStore = context.getNMStateStore();
     if (stateStore.canRecover()) {
+      exec.recoverDeviceControlSystem();
+      
       rsrcLocalizationSrvc.recoverLocalizedResources(
           stateStore.loadLocalizationState());
 
