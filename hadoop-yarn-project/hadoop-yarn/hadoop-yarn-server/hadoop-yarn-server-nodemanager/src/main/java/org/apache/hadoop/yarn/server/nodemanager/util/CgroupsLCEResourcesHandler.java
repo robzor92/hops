@@ -22,11 +22,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,12 +76,31 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   private boolean gpuSupportEnabled = false;
   private static GPUAllocator gpuAllocator;
   
+  private String[] DEFAULT_WHITELIST_ENTRIES = {
+      "c *:* m",      // Make new character devices.
+      "b *:* m",      // Make new block devices.
+      "c 5:1 rwm",    // /dev/console
+      "c 4:0 rwm",    // /dev/tty0
+      "c 4:1 rwm",    // /dev/tty1
+      "c 136:* rwm",  // /dev/pts/*
+      "c 5:2 rwm",    // /dev/ptmx
+      "c 10:200 rwm", // /dev/net/tun
+      "c 1:3 rwm",    // /dev/null
+      "c 1:5 rwm",    // /dev/zero
+      "c 1:7 rwm",    // /dev/full
+      "c 5:0 rwm",    // /dev/tty
+      "c 1:9 rwm",    // /dev/urandom
+      "c 1:8 rwm",    // /dev/random
+  };
+  
   private final String MTAB_FILE = "/proc/mounts";
   private final String CGROUPS_FSTYPE = "cgroup";
   private final String CONTROLLER_CPU = "cpu";
-  private final String CONTROLLER_DEVICES = "devices";
   private final String CPU_PERIOD_US = "cfs_period_us";
   private final String CPU_QUOTA_US = "cfs_quota_us";
+  private final String DEVICES_ALLOW = "allow";
+  private final String DEVICES_DENY = "deny";
+  private final String CONTROLLER_DEVICES = "devices";
   private final int CPU_DEFAULT_WEIGHT = 1024; // set by kernel
   private final int MAX_QUOTA_US = 1000 * 1000;
   private final int MIN_PERIOD_US = 1000;
@@ -95,9 +116,6 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   public CgroupsLCEResourcesHandler() {
     this.controllerPaths = new HashMap<>();
     clock = new SystemClock();
-    
-    gpuAllocator = GPUAllocator.getInstance();
-    gpuSupportEnabled = gpuAllocator.isInitialized();
     
   }
   
@@ -154,13 +172,21 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       throws IOException {
     initConfig();
     
+    
+    if(NodeManagerHardwareUtils.getNodeGPUs(plugin, conf) > 0) {
+      gpuAllocator = GPUAllocator.getInstance();
+      gpuSupportEnabled = getGPUAllocator().isInitialized();
+    }
+    
     // mount cgroups if requested
     if (cgroupMount && cgroupMountPath != null) {
       ArrayList<String> cgroupKVs = new ArrayList<String>();
       cgroupKVs.add(CONTROLLER_CPU + "=" + cgroupMountPath + "/" +
           CONTROLLER_CPU);
-      cgroupKVs.add(CONTROLLER_DEVICES + "=" + cgroupMountPath + "/" +
-          CONTROLLER_DEVICES);
+      if(gpuSupportEnabled) {
+        cgroupKVs.add(CONTROLLER_DEVICES + "=" + cgroupMountPath + "/" +
+            CONTROLLER_DEVICES);
+      }
       lce.mountCgroups(cgroupKVs, cgroupPrefix);
     }
     
@@ -177,6 +203,10 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     } else if (cpuLimitsExist()) {
       LOG.info("Removing CPU constraints for YARN containers.");
       updateCgroup(CONTROLLER_CPU, "", CPU_QUOTA_US, String.valueOf(-1));
+    }
+    
+    if(gpuSupportEnabled) {
+      prepareDeviceSubsystem();
     }
   }
   
@@ -259,6 +289,28 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     if (! new File(path).mkdir()) {
       throw new IOException("Failed to create cgroup at " + path);
     }
+  }
+  
+  /**
+   * Initialize devices cgroup hierarchy
+   */
+  private void prepareDeviceSubsystem() throws IOException {
+    String denyAllDevices = "a *:* rwm";
+    updateCgroup("devices", "", "deny", denyAllDevices);
+
+    StringBuilder superSetAvailableDevices = new StringBuilder();
+    
+    HashSet<Device> gpuDevices = gpuAllocator.getAvailableDevices();
+    superSetAvailableDevices.append(gpuDevices);
+    
+    HashSet<Device> mandatoryDevices = gpuAllocator.getMandatoryDevices();
+    superSetAvailableDevices.append(mandatoryDevices);
+    
+    for(String defaultDevice: DEFAULT_WHITELIST_ENTRIES) {
+      superSetAvailableDevices.append(defaultDevice + "\n");
+    }
+
+    updateCgroup("devices", "", DEVICES_ALLOW, superSetAvailableDevices.toString());
   }
   
   private void updateCgroup(String controller, String groupName, String param,
@@ -370,6 +422,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   }
   
   private String createCgroupDeviceEntry(HashSet devices) {
+
     StringBuilder cgroupDeviceEntries = new StringBuilder();
     Iterator<Device> itr = devices.iterator();
     while(itr.hasNext()) {
@@ -385,7 +438,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   private void setupLimits(ContainerId containerId,
       Resource containerResource) throws IOException {
     String containerName = containerId.toString();
-
+    
     System.out.println("requesting" + containerResource.getGPUs() + " gpus") ;
     
     if (isCpuWeightEnabled()) {
@@ -411,27 +464,31 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     }
     
     int containerGPUs = 2;
-    if(isGpuSupportEnabled() && containerGPUs > 0) {
+    System.out.println(containerGPUs);
+    if(isGpuSupportEnabled()) {
       createCgroup(CONTROLLER_DEVICES, containerName);
-
       
+      System.out.println(containerName   +  "  "  + containerGPUs);
       HashMap<String, HashSet<Device>> cGroupDeviceAccess =
-          gpuAllocator.allocate(containerName, containerGPUs);
+          getGPUAllocator().allocate(containerName, containerGPUs);
       
-      HashSet<Device> deniedDevices = cGroupDeviceAccess.get("deny");
+      HashSet<Device> deniedDevices = cGroupDeviceAccess.get(DEVICES_DENY);
       
       String cgroupGPUDenyEntries = createCgroupDeviceEntry(deniedDevices);
-      updateCgroup(CONTROLLER_DEVICES, containerName, "deny",
+      updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_DENY,
           cgroupGPUDenyEntries);
       
-      HashSet<Device> allowedDevices = cGroupDeviceAccess.get("allow");
-      HashSet<Device> mandatoryDevices = gpuAllocator.getMandatoryDevices();
+      /* SHOULD NOT BE NEEDED
+      
+      HashSet<Device> allowedDevices = cGroupDeviceAccess.get(DEVICES_ALLOW);
+      HashSet<Device> mandatoryDevices = getGPUAllocator().getMandatoryDevices();
       
       String cgroupAllowedDevices = createCgroupDeviceEntry(allowedDevices);
       String cgroupMandatoryDevices = createCgroupDeviceEntry(mandatoryDevices);
       
-      updateCgroup(CONTROLLER_DEVICES, containerName, "allow",
+      updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_ALLOW,
           cgroupAllowedDevices + cgroupMandatoryDevices);
+          */
     }
   }
   
@@ -442,7 +499,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     
     if(isGpuSupportEnabled()) {
       deleteCgroup(pathForCgroup(CONTROLLER_DEVICES, containerId.toString()));
-      gpuAllocator.release(containerId.toString());
+      getGPUAllocator().release(containerId.toString());
     }
   }
 
@@ -496,8 +553,10 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     for (File container : containers) {
       try {
         String allowFileContents = FileUtils.readFileToString(new File
-            (container.getAbsolutePath() + "devices.allow", "UTF-8"));
-        gpuAllocator.recoverAllocation(container.getName(), allowFileContents);
+            (container.getAbsolutePath() + CONTROLLER_DEVICES + "." +
+                DEVICES_ALLOW, "UTF-8"));
+        getGPUAllocator().recoverAllocation(container.getName(),
+            allowFileContents);
       } catch (IOException e1) {
         LOG.error("Could not retrieve contents of file in path " + container
             .getAbsolutePath() + "devices.allow");
@@ -574,6 +633,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     
     if (cpuControllerPath != null) {
       File f = new File(cpuControllerPath + "/" + this.cgroupPrefix);
+      System.out.println("PATH " + f.getAbsolutePath());
       if (FileUtil.canWrite(f)) {
         controllerPaths.put(CONTROLLER_CPU, cpuControllerPath);
       } else {
@@ -608,4 +668,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   String getMtabFileName() {
     return MTAB_FILE;
   }
+  
+  @VisibleForTesting
+  GPUAllocator getGPUAllocator() { return gpuAllocator; }
 }
