@@ -28,6 +28,7 @@ public class GPUManagementLibraryLoader {
   
   public static GPUManagementLibrary load(String classStr) throws GPUManagementLibraryException {
     GPUManagementLibrary gpuManagementLibrary = null;
+    
     try {
       gpuManagementLibrary = (GPUManagementLibrary) Class.forName(classStr)
               .newInstance();
