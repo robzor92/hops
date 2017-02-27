@@ -19,6 +19,7 @@
 package org.apache.hadoop.yarn.util;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
@@ -35,6 +36,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
+import org.apache.hadoop.fs.FileUtil;
 
 /**
  * Plugin to calculate resource information on Linux systems.
@@ -59,6 +61,10 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   private static final String MEMFREE_STRING = "MemFree";
   private static final String SWAPFREE_STRING = "SwapFree";
   private static final String INACTIVE_STRING = "Inactive";
+  
+  private static final String DEVICES_PATH ="/dev";
+  private static final Pattern NVIDIA_GPU_FORMAT = Pattern.compile(
+      "(nvidia\\d)");
 
   /**
    * Patterns for parsing /proc/cpuinfo
@@ -93,11 +99,6 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
 
   boolean readMemInfoFile = false;
   boolean readCpuInfoFile = false;
-  
-  private GPUManagementLibrary gpuManagementLibrary;
-  private static final String GPU_MANAGEMENT_LIBRARY_CLASSNAME = "io.hops" +
-      ".metadata.nvidia.NvidiaManagementLibrary";
-
   /**
    * Get current time
    * @return Unix time stamp in millisecond
@@ -109,14 +110,6 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   public LinuxResourceCalculatorPlugin() {
     this(PROCFS_MEMFILE, PROCFS_CPUINFO, PROCFS_STAT,
         ProcfsBasedProcessTree.JIFFY_LENGTH_IN_MILLIS);
-  
-    try {
-      gpuManagementLibrary = GPUManagementLibraryLoader.load
-          (GPU_MANAGEMENT_LIBRARY_CLASSNAME);
-      gpuManagementLibrary.initialize();
-    } catch (GPUManagementLibraryException e) {
-      e.printStackTrace();
-    }
   }
 
   /**
@@ -371,7 +364,21 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   /** {@inheritDoc} */
   @Override
   public int getNumGPUs() {
-    return gpuManagementLibrary.getNumGPUs();
+    int gpus = 0;
+    File[] devicesDir = null;
+    try {
+      devicesDir = FileUtil.listFiles(new File(DEVICES_PATH));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    Matcher mat;
+    for(File f: devicesDir) {
+      mat = NVIDIA_GPU_FORMAT.matcher(f.getName());
+      if(mat.find()) {
+        gpus++;
+      }
+    }
+    return gpus;
   }
   
   /**
