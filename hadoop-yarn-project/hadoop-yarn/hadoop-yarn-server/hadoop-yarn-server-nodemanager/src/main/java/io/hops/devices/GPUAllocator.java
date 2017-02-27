@@ -44,20 +44,19 @@ public class GPUAllocator {
     try {
       gpuManagementLibrary =
           GPUManagementLibraryLoader.load(GPU_MANAGEMENT_LIBRARY_CLASSNAME);
-          initialize();
     } catch(GPUManagementLibraryException gpue) {
       LOG.info("Could not locate libhops-nvml.so, no GPUs will be offered " +
           "by this NM");
     }
 
   }
-
+  
   @VisibleForTesting
   public GPUAllocator(GPUManagementLibrary gpuManagementLibrary) {
     this.gpuManagementLibrary = gpuManagementLibrary;
-    this.initialized = true;
+    initialize();
   }
-  
+
   /**
    * Initialize the NVML library to check that it was setup correctly
    * @return boolean for success or not
@@ -133,6 +132,8 @@ public class GPUAllocator {
     return mandatoryDevices;
   }
   
+  public HashSet<Device> getAvailableDevices() { return availableDevices; }
+  
   /**
    * Finds out which gpus are currently allocated to a container
    *
@@ -184,7 +185,7 @@ public class GPUAllocator {
         
       containerDeviceAllocation.put(containerName, deviceAllocation);
       //only allow access to allocated GPUs
-      cGroupDeviceMapping.put("allow", deviceAllocation);
+      //cGroupDeviceMapping.put("allow", deviceAllocation);
       //need to deny remaining available devices
       cGroupDeviceMapping.get("deny").addAll(availableDevices);
       return cGroupDeviceMapping;
