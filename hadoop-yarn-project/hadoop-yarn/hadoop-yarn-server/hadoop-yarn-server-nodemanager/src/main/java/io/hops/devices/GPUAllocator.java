@@ -53,8 +53,12 @@ public class GPUAllocator {
   
   @VisibleForTesting
   public GPUAllocator(GPUManagementLibrary gpuManagementLibrary) {
+    availableDevices = new HashSet<>();
+    containerDeviceAllocation = new HashMap<>();
+    mandatoryDevices = new HashSet<>();
+
     this.gpuManagementLibrary = gpuManagementLibrary;
-    initialize();
+
   }
 
   /**
@@ -62,11 +66,11 @@ public class GPUAllocator {
    * @return boolean for success or not
    */
   public boolean initialize() {
-    if(initialized == false) {
-      initialized = gpuManagementLibrary.initialize();
-      initMandatoryDevices();
-      initAvailableDevices();
-    }
+      if(initialized == false) {
+        initialized = gpuManagementLibrary.initialize();
+        initMandatoryDevices();
+        initAvailableDevices();
+      }
     return this.initialized;
   }
   
