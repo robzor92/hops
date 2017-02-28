@@ -75,6 +75,10 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   
   private boolean gpuSupportEnabled = false;
   private static GPUAllocator gpuAllocator;
+
+  private final String DEVICES_ALLOW = "allow";
+  private final String DEVICES_DENY = "deny";
+  private final String CONTROLLER_DEVICES = "devices";
   
   private String[] DEFAULT_WHITELIST_ENTRIES = {
       "c *:* m",      // Make new character devices.
@@ -91,16 +95,13 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       "c 5:0 rwm",    // /dev/tty
       "c 1:9 rwm",    // /dev/urandom
       "c 1:8 rwm",    // /dev/random
-  };
+};
   
   private final String MTAB_FILE = "/proc/mounts";
   private final String CGROUPS_FSTYPE = "cgroup";
   private final String CONTROLLER_CPU = "cpu";
   private final String CPU_PERIOD_US = "cfs_period_us";
   private final String CPU_QUOTA_US = "cfs_quota_us";
-  private final String DEVICES_ALLOW = "allow";
-  private final String DEVICES_DENY = "deny";
-  private final String CONTROLLER_DEVICES = "devices";
   private final int CPU_DEFAULT_WEIGHT = 1024; // set by kernel
   private final int MAX_QUOTA_US = 1000 * 1000;
   private final int MIN_PERIOD_US = 1000;
@@ -299,13 +300,17 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     updateCgroup("devices", "", "deny", denyAllDevices);
 
     StringBuilder superSetAvailableDevices = new StringBuilder();
-    
-    HashSet<Device> gpuDevices = gpuAllocator.getAvailableDevices();
-    superSetAvailableDevices.append(gpuDevices);
+
+    HashSet<Device> gpuDevices = gpuAllocator.getMandatoryDevices();
+    for(Device gpuDevice: gpuDevices) {
+      superSetAvailableDevices.append(gpuDevice.toString() + "\n");
+    }
     
     HashSet<Device> mandatoryDevices = gpuAllocator.getMandatoryDevices();
-    superSetAvailableDevices.append(mandatoryDevices);
-    
+    for(Device mandatoryDevice: mandatoryDevices) {
+      superSetAvailableDevices.append(mandatoryDevice.toString() + "\n");
+    }
+
     for(String defaultDevice: DEFAULT_WHITELIST_ENTRIES) {
       superSetAvailableDevices.append(defaultDevice + "\n");
     }
@@ -438,9 +443,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   private void setupLimits(ContainerId containerId,
       Resource containerResource) throws IOException {
     String containerName = containerId.toString();
-    
-    System.out.println("requesting" + containerResource.getGPUs() + " gpus") ;
-    
+
     if (isCpuWeightEnabled()) {
       int containerVCores = containerResource.getVirtualCores();
       createCgroup(CONTROLLER_CPU, containerName);
@@ -464,11 +467,9 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     }
     
     int containerGPUs = 2;
-    System.out.println(containerGPUs);
     if(isGpuSupportEnabled()) {
       createCgroup(CONTROLLER_DEVICES, containerName);
-      
-      System.out.println(containerName   +  "  "  + containerGPUs);
+
       HashMap<String, HashSet<Device>> cGroupDeviceAccess =
           getGPUAllocator().allocate(containerName, containerGPUs);
       
@@ -506,10 +507,9 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   /*
    * LCE Resources Handler interface
    */
-  
+
   public void preExecute(ContainerId containerId, Resource containerResource)
       throws IOException {
-    System.out.println(containerResource.getMemory());
     setupLimits(containerId, containerResource);
   }
   
@@ -590,7 +590,6 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       
       for (String str = in.readLine(); str != null;
            str = in.readLine()) {
-        System.out.println("entry " + str);
         Matcher m = MTAB_FILE_FORMAT.matcher(str);
         boolean mat = m.find();
         if (mat) {
@@ -633,7 +632,6 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     
     if (cpuControllerPath != null) {
       File f = new File(cpuControllerPath + "/" + this.cgroupPrefix);
-      System.out.println("PATH " + f.getAbsolutePath());
       if (FileUtil.canWrite(f)) {
         controllerPaths.put(CONTROLLER_CPU, cpuControllerPath);
       } else {
@@ -671,4 +669,9 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   
   @VisibleForTesting
   GPUAllocator getGPUAllocator() { return gpuAllocator; }
+
+  @VisibleForTesting
+  String[] getDefaultWhiteListEntries() {
+    return DEFAULT_WHITELIST_ENTRIES;
+  }
 }
