@@ -25,6 +25,7 @@ import java.util.Random;
 
 
 import org.apache.hadoop.fs.Path;
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
@@ -43,8 +44,9 @@ public class TestLinuxResourceCalculatorPlugin {
 	  public FakeLinuxResourceCalculatorPlugin(String procfsMemFile,
 			                                       String procfsCpuFile,
 			                                       String procfsStatFile,
-			                                       long jiffyLengthInMillis) {
-	    super(procfsMemFile, procfsCpuFile, procfsStatFile, jiffyLengthInMillis);
+			                                       long jiffyLengthInMillis,
+                                                   String devDir) {
+	    super(procfsMemFile, procfsCpuFile, procfsStatFile, jiffyLengthInMillis, devDir);
 	  }
 	  @Override
 	  long getCurrentTime() {
@@ -61,14 +63,16 @@ public class TestLinuxResourceCalculatorPlugin {
   private static final String FAKE_CPUFILE;
   private static final String FAKE_STATFILE;
   private static final long FAKE_JIFFY_LENGTH = 10L;
+  private static final String FAKE_DEV_DIR;
   static {
     int randomNum = (new Random()).nextInt(1000000000);
     FAKE_MEMFILE = TEST_ROOT_DIR + File.separator + "MEMINFO_" + randomNum;
     FAKE_CPUFILE = TEST_ROOT_DIR + File.separator + "CPUINFO_" + randomNum;
     FAKE_STATFILE = TEST_ROOT_DIR + File.separator + "STATINFO_" + randomNum;
+    FAKE_DEV_DIR = TEST_ROOT_DIR + File.separator + "dev";
     plugin = new FakeLinuxResourceCalculatorPlugin(FAKE_MEMFILE, FAKE_CPUFILE,
-                                                   FAKE_STATFILE,
-                                                   FAKE_JIFFY_LENGTH);
+                                                   FAKE_STATFILE, FAKE_JIFFY_LENGTH,
+                                                   FAKE_DEV_DIR);
   }
   static final String MEMINFO_FORMAT = 
 	  "MemTotal:      %d kB\n" +
@@ -139,6 +143,10 @@ public class TestLinuxResourceCalculatorPlugin {
     "processes 26414943\n" +
     "procs_running 1\n" +
     "procs_blocked 0\n";
+
+  static final String[] NVIDIA_DEVICE_FILES = new String[] {
+          "nvidia0", "nvidia1", "nvidia2", "nvidia3", "nvidia4", "nvidia5", "nvidia6", "nvidia7"
+  };
   
   /**
    * Test parsing /proc/stat and /proc/cpuinfo
@@ -231,5 +239,22 @@ public class TestLinuxResourceCalculatorPlugin {
                  1024L * (memFree + inactive + swapFree));
     assertEquals(plugin.getPhysicalMemorySize(), 1024L * memTotal);
     assertEquals(plugin.getVirtualMemorySize(), 1024L * (memTotal + swapTotal));
+  }
+
+
+  @Test
+  public void detectingNvidiaGPUs() throws IOException {
+      File deviceDir = new File(FAKE_DEV_DIR);
+      deviceDir.deleteOnExit();
+      deviceDir.mkdir();
+      Assert.assertTrue(deviceDir.isDirectory());
+
+      for(String devFile : NVIDIA_DEVICE_FILES) {
+          File nvidiaGPUFile = new File(deviceDir, devFile);
+          nvidiaGPUFile.createNewFile();
+          Assert.assertTrue(nvidiaGPUFile.exists());
+      }
+
+      assertEquals(NVIDIA_DEVICE_FILES.length, plugin.getNumGPUs());
   }
 }
