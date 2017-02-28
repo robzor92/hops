@@ -62,7 +62,7 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   private static final String SWAPFREE_STRING = "SwapFree";
   private static final String INACTIVE_STRING = "Inactive";
   
-  private static final String DEVICES_PATH ="/dev";
+  private static String DEVICES_PATH ="/dev";
   private static final Pattern NVIDIA_GPU_FORMAT = Pattern.compile(
       "(nvidia\\d)");
 
@@ -109,7 +109,7 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
 
   public LinuxResourceCalculatorPlugin() {
     this(PROCFS_MEMFILE, PROCFS_CPUINFO, PROCFS_STAT,
-        ProcfsBasedProcessTree.JIFFY_LENGTH_IN_MILLIS);
+        ProcfsBasedProcessTree.JIFFY_LENGTH_IN_MILLIS, DEVICES_PATH);
   }
 
   /**
@@ -123,12 +123,14 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   public LinuxResourceCalculatorPlugin(String procfsMemFile,
                                        String procfsCpuFile,
                                        String procfsStatFile,
-                                       long jiffyLengthInMillis) {
+                                       long jiffyLengthInMillis,
+                                       String devPath) {
     this.procfsMemFile = procfsMemFile;
     this.procfsCpuFile = procfsCpuFile;
     this.procfsStatFile = procfsStatFile;
     this.jiffyLengthInMillis = jiffyLengthInMillis;
     this.cpuTimeTracker = new CpuTimeTracker(jiffyLengthInMillis);
+    this.DEVICES_PATH = devPath;
   }
 
   /**
@@ -369,7 +371,8 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
     try {
       devicesDir = FileUtil.listFiles(new File(DEVICES_PATH));
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.warn("Could not access file directory on path " + DEVICES_PATH +
+              ", plugin will not be able to identify GPUs");
     }
     Matcher mat;
     for(File f: devicesDir) {
