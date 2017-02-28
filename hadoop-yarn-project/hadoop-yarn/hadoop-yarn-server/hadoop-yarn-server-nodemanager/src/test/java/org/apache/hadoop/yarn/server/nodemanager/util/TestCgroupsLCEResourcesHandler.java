@@ -392,7 +392,7 @@ public class TestCgroupsLCEResourcesHandler {
   }
   
   @Test
-  public void testContainerLimitsGPU() throws IOException {
+  public void testContainerGPUAllocation() throws IOException {
     LinuxContainerExecutor mockLCE = new MockLinuxContainerExecutor();
     CustomCgroupsLCEResourceHandler handler =
         new CustomCgroupsLCEResourceHandler();
@@ -428,18 +428,20 @@ public class TestCgroupsLCEResourcesHandler {
     // setup our handler and call init()
     handler.setMtabFile(mockMtab.getAbsolutePath());
     handler.init(mockLCE, plugin);
-    
-    handler.preExecute(id, Resource.newInstance(1024, 1, 2));
     File containerDirGPU = new File(cgroupMountDirGPU, id.toString());
+    File denyFile = new File(containerDirGPU, "devices.deny");
+    Assert.assertFalse(denyFile.exists());
+    handler.preExecute(id, Resource.newInstance(1024, 1, 2));
     Assert.assertTrue(containerDirGPU.exists());
     Assert.assertTrue(containerDirGPU.isDirectory());
-    File denyFile = new File(containerDirGPU, "devices.deny");
     Assert.assertTrue(denyFile.exists());
   
     List<String> denyEntries = FileUtils.readLines(denyFile);
     Assert.assertTrue(denyEntries.size() == 2);
     Assert.assertTrue(denyEntries.toString().contains("c 195:0 rwm"));
     Assert.assertTrue(denyEntries.toString().contains("c 195:1 rwm"));
+
+    FileUtils.deleteQuietly(cgroupDir);
   }
   
   @Test
@@ -469,37 +471,16 @@ public class TestCgroupsLCEResourcesHandler {
     handler.setMtabFile(mockMtab.getAbsolutePath());
     handler.setGPUAllocator(gpuAllocator);
     handler.init(mockLCE, plugin);
-  
-  
+
     List<String> cgroupDeviceDirEntries = FileUtils.readLines(new File
-        (cgroupMountDirGPU, "devices.allow"));
-    
-    
-    for(String defaultDevice : DEFAULT_WHITELIST_ENTRIES) {
-      System.out.println(defaultDevice + " in " + cgroupDeviceDirEntries.get(0));
-      
-      System.out.println(cgroupDeviceDirEntries.contains(defaultDevice));
-      //Assert.assertTrue(cgroupDeviceDirEntries.contains(defaultDevice));
+        (cgroupMountDirGPU, "devices.allow"), "UTF-8");
+
+      for(String defaultDevice : handler.getDefaultWhiteListEntries()) {
+      Assert.assertTrue(cgroupDeviceDirEntries.contains(defaultDevice));
     }
+    FileUtils.deleteQuietly(cgroupDir);
   }
-  
-  String[] DEFAULT_WHITELIST_ENTRIES = {
-      "c *:* m",      // Make new character devices.
-      "b *:* m",      // Make new block devices.
-      "c 5:1 rwm",    // /dev/console
-      "c 4:0 rwm",    // /dev/tty0
-      "c 4:1 rwm",    // /dev/tty1
-      "c 136:* rwm",  // /dev/pts/*
-      "c 5:2 rwm",    // /dev/ptmx
-      "c 10:200 rwm", // /dev/net/tun
-      "c 1:3 rwm",    // /dev/null
-      "c 1:5 rwm",    // /dev/zero
-      "c 1:7 rwm",    // /dev/full
-      "c 5:0 rwm",    // /dev/tty
-      "c 1:9 rwm",    // /dev/urandom
-      "c 1:8 rwm",    // /dev/random
-  };
-  
+
   public static File createMockCgroupMount(File parentDir, String type,
       String hierarchy) throws IOException {
     File cgroupMountDir =
