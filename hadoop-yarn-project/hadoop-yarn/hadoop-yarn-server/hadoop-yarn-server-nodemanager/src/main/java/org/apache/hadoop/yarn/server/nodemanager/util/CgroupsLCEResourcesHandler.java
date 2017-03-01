@@ -175,7 +175,10 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     
     
     if(NodeManagerHardwareUtils.getNodeGPUs(plugin, conf) > 0) {
-      gpuAllocator = GPUAllocator.getInstance();
+      if(!getGPUAllocator().isInitialized()) {
+        gpuAllocator = GPUAllocator.getInstance();
+        gpuAllocator.initialize();
+      }
       gpuSupportEnabled = getGPUAllocator().isInitialized();
     }
     
@@ -299,23 +302,19 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     String denyAllDevices = "a *:* rwm";
     updateCgroup("devices", "", "deny", denyAllDevices);
 
-    StringBuilder superSetAvailableDevices = new StringBuilder();
+    StringBuilder allAllowedDevicesStr = new StringBuilder();
 
-    HashSet<Device> gpuDevices = gpuAllocator.getMandatoryDevices();
-    for(Device gpuDevice: gpuDevices) {
-      superSetAvailableDevices.append(gpuDevice.toString() + "\n");
-    }
-    
-    HashSet<Device> mandatoryDevices = gpuAllocator.getMandatoryDevices();
-    for(Device mandatoryDevice: mandatoryDevices) {
-      superSetAvailableDevices.append(mandatoryDevice.toString() + "\n");
-    }
+    HashSet<Device> gpuDevices = getGPUAllocator().getAvailableDevices();
+    allAllowedDevicesStr.append(createCgroupDeviceEntry(gpuDevices));
+
+    HashSet<Device> mandatoryDevices = getGPUAllocator().getMandatoryDevices();
+    allAllowedDevicesStr.append(createCgroupDeviceEntry(mandatoryDevices));
 
     for(String defaultDevice: DEFAULT_WHITELIST_ENTRIES) {
-      superSetAvailableDevices.append(defaultDevice + "\n");
+      allAllowedDevicesStr.append(defaultDevice + "\n");
     }
 
-    updateCgroup("devices", "", DEVICES_ALLOW, superSetAvailableDevices.toString());
+    updateCgroup("devices", "", DEVICES_ALLOW, allAllowedDevicesStr.toString());
   }
   
   private void updateCgroup(String controller, String groupName, String param,
@@ -478,9 +477,8 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       String cgroupGPUDenyEntries = createCgroupDeviceEntry(deniedDevices);
       updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_DENY,
           cgroupGPUDenyEntries);
-      
-      /* SHOULD NOT BE NEEDED
-      
+
+      //For testing purposes
       HashSet<Device> allowedDevices = cGroupDeviceAccess.get(DEVICES_ALLOW);
       HashSet<Device> mandatoryDevices = getGPUAllocator().getMandatoryDevices();
       
@@ -489,7 +487,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       
       updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_ALLOW,
           cgroupAllowedDevices + cgroupMandatoryDevices);
-          */
+
     }
   }
   
