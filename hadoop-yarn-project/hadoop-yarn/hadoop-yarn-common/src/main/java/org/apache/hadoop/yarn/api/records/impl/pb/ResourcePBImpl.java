@@ -82,12 +82,13 @@ public class ResourcePBImpl extends Resource {
   @Override
   public int getGPUs() {
     ResourceProtoOrBuilder p = viaProto ? proto : builder;
-    return 0;
+    return (p.getGpus());
   }
   
   @Override
   public void setGPUs(int gpus) {
-
+    maybeInitBuilder();
+    builder.setGpus((gpus));
   }
   
   @Override
