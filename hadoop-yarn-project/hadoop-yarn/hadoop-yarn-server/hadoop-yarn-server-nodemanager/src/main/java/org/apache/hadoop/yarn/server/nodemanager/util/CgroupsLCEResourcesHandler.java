@@ -466,8 +466,8 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       }
     }
     
-    int containerGPUs = 2;
     if(isGpuSupportEnabled()) {
+      int containerGPUs = containerResource.getGPUs();
       createCgroup(CONTROLLER_DEVICES, containerName);
 
       HashMap<String, HashSet<Device>> cGroupDeviceAccess =
