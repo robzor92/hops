@@ -301,14 +301,15 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
 
     StringBuilder superSetAvailableDevices = new StringBuilder();
 
-    HashSet<Device> gpuDevices = gpuAllocator.getMandatoryDevices();
+    HashSet<Device> gpuDevices = getGPUAllocator().getMandatoryDevices();
     for(Device gpuDevice: gpuDevices) {
-      superSetAvailableDevices.append(gpuDevice.toString() + "\n");
+      superSetAvailableDevices.append("c " + gpuDevice.toString() + " rwm\n");
     }
     
-    HashSet<Device> mandatoryDevices = gpuAllocator.getMandatoryDevices();
+    HashSet<Device> mandatoryDevices = getGPUAllocator().getMandatoryDevices();
     for(Device mandatoryDevice: mandatoryDevices) {
-      superSetAvailableDevices.append(mandatoryDevice.toString() + "\n");
+      superSetAvailableDevices.append("c " + mandatoryDevice.toString() + " " +
+          "rwm\n");
     }
 
     for(String defaultDevice: DEFAULT_WHITELIST_ENTRIES) {
@@ -539,7 +540,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   }
   
   @Override
-  public void recoverDeviceControlSystem() {
+  public void recoverDeviceControlSystem(ContainerId containerId) {
     if(!gpuSupportEnabled) {
       return;
     }
@@ -552,14 +553,17 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
         .DIRECTORY);
     for (File container : containers) {
       try {
-        String allowFileContents = FileUtils.readFileToString(new File
-            (container.getAbsolutePath() + CONTROLLER_DEVICES + "." +
-                DEVICES_ALLOW, "UTF-8"));
-        getGPUAllocator().recoverAllocation(container.getName(),
-            allowFileContents);
-      } catch (IOException e1) {
+        if(container.getName().equals(containerId.toString())) {
+          String allowFileContents = FileUtils.readFileToString(new File
+              (container.getAbsolutePath() + CONTROLLER_DEVICES + "." +
+                  DEVICES_ALLOW, "UTF-8"));
+          getGPUAllocator().recoverAllocation(container.getName(),
+              allowFileContents);
+          break;
+        }
+      } catch (IOException e) {
         LOG.error("Could not retrieve contents of file in path " + container
-            .getAbsolutePath() + "devices.allow");
+            .getAbsolutePath() + "devices.allow", e);
       }
     }
   }

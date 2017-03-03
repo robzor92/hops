@@ -25,6 +25,7 @@ import org.apache.hadoop.crypto.UnsupportedCodecException;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor;
+import org.apache.hadoop.yarn.server.nodemanager.containermanager.container.Container;
 
 public class DefaultLCEResourcesHandler implements LCEResourcesHandler {
 
@@ -63,7 +64,7 @@ public class DefaultLCEResourcesHandler implements LCEResourcesHandler {
   }
   
   @Override
-  public void recoverDeviceControlSystem() {
+  public void recoverDeviceControlSystem(ContainerId containerId) {
     throw new UnsupportedCodecException("Only supports device allocation " +
         "recovery for Cgroup containers");
   }
