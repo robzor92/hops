@@ -243,7 +243,7 @@ public class TestLinuxResourceCalculatorPlugin {
 
 
   @Test
-  public void detectingNvidiaGPUs() throws IOException {
+  public void testDetectNvidiaGPUs() throws IOException {
       File deviceDir = new File(FAKE_DEV_DIR);
       deviceDir.deleteOnExit();
       deviceDir.mkdir();

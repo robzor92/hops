@@ -131,7 +131,7 @@ public class ContainersMonitorImpl extends AbstractService implements
         YarnConfiguration.NM_VCORES,
         YarnConfiguration.DEFAULT_NM_VCORES);
     
-    int configuredGPUsForContainers = resourceCalculatorPlugin.getNumGPUs();
+    int configuredGPUsForContainers = NodeManagerHardwareUtils.getNodeGPUs(resourceCalculatorPlugin, conf);
 
 
     // Setting these irrespective of whether checks are enabled. Required in

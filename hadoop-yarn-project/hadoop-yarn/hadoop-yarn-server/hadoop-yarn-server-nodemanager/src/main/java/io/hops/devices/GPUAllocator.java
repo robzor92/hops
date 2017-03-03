@@ -189,7 +189,7 @@ public class GPUAllocator {
         
       containerDeviceAllocation.put(containerName, deviceAllocation);
       //only allow access to allocated GPUs
-      //cGroupDeviceMapping.put("allow", deviceAllocation);
+      cGroupDeviceMapping.put("allow", deviceAllocation);
       //need to deny remaining available devices
       cGroupDeviceMapping.get("deny").addAll(availableDevices);
       return cGroupDeviceMapping;

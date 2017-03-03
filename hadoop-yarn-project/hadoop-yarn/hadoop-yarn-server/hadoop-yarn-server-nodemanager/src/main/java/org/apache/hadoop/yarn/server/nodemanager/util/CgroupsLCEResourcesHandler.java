@@ -75,7 +75,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   
   private boolean gpuSupportEnabled = false;
   private static GPUAllocator gpuAllocator;
-
+  
   private final String DEVICES_ALLOW = "allow";
   private final String DEVICES_DENY = "deny";
   private final String CONTROLLER_DEVICES = "devices";
@@ -95,7 +95,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       "c 5:0 rwm",    // /dev/tty
       "c 1:9 rwm",    // /dev/urandom
       "c 1:8 rwm",    // /dev/random
-};
+  };
   
   private final String MTAB_FILE = "/proc/mounts";
   private final String CGROUPS_FSTYPE = "cgroup";
@@ -175,7 +175,10 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     
     
     if(NodeManagerHardwareUtils.getNodeGPUs(plugin, conf) > 0) {
-      gpuAllocator = GPUAllocator.getInstance();
+      if(!getGPUAllocator().isInitialized()) {
+        gpuAllocator = GPUAllocator.getInstance();
+        getGPUAllocator().initialize();
+      }
       gpuSupportEnabled = getGPUAllocator().isInitialized();
     }
     
@@ -298,25 +301,27 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   private void prepareDeviceSubsystem() throws IOException {
     String denyAllDevices = "a *:* rwm";
     updateCgroup("devices", "", "deny", denyAllDevices);
-
-    StringBuilder superSetAvailableDevices = new StringBuilder();
-
+    
+    StringBuilder allAllowedDevicesStr = new StringBuilder();
+    
     HashSet<Device> gpuDevices = getGPUAllocator().getMandatoryDevices();
     for(Device gpuDevice: gpuDevices) {
-      superSetAvailableDevices.append("c " + gpuDevice.toString() + " rwm\n");
+      allAllowedDevicesStr.append("c " + gpuDevice.toString() + " rwm\n");
     }
     
     HashSet<Device> mandatoryDevices = getGPUAllocator().getMandatoryDevices();
     for(Device mandatoryDevice: mandatoryDevices) {
-      superSetAvailableDevices.append("c " + mandatoryDevice.toString() + " " +
+      allAllowedDevicesStr.append("c " + mandatoryDevice.toString() + " " +
           "rwm\n");
     }
-
+    
     for(String defaultDevice: DEFAULT_WHITELIST_ENTRIES) {
-      superSetAvailableDevices.append(defaultDevice + "\n");
+      allAllowedDevicesStr.append(defaultDevice + "\n");
     }
-
-    updateCgroup("devices", "", DEVICES_ALLOW, superSetAvailableDevices.toString());
+    
+    System.out.println("allowed " + allAllowedDevicesStr.toString());
+    
+    updateCgroup("devices", "", DEVICES_ALLOW, allAllowedDevicesStr.toString());
   }
   
   private void updateCgroup(String controller, String groupName, String param,
@@ -428,7 +433,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   }
   
   private String createCgroupDeviceEntry(HashSet devices) {
-
+    
     StringBuilder cgroupDeviceEntries = new StringBuilder();
     Iterator<Device> itr = devices.iterator();
     while(itr.hasNext()) {
@@ -444,7 +449,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   private void setupLimits(ContainerId containerId,
       Resource containerResource) throws IOException {
     String containerName = containerId.toString();
-
+    
     if (isCpuWeightEnabled()) {
       int containerVCores = containerResource.getVirtualCores();
       createCgroup(CONTROLLER_CPU, containerName);
@@ -470,7 +475,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     if(isGpuSupportEnabled()) {
       int containerGPUs = containerResource.getGPUs();
       createCgroup(CONTROLLER_DEVICES, containerName);
-
+      
       HashMap<String, HashSet<Device>> cGroupDeviceAccess =
           getGPUAllocator().allocate(containerName, containerGPUs);
       
@@ -480,8 +485,8 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_DENY,
           cgroupGPUDenyEntries);
       
-      /* SHOULD NOT BE NEEDED
-      
+      //For testing purposes
+      /*
       HashSet<Device> allowedDevices = cGroupDeviceAccess.get(DEVICES_ALLOW);
       HashSet<Device> mandatoryDevices = getGPUAllocator().getMandatoryDevices();
       
@@ -491,6 +496,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_ALLOW,
           cgroupAllowedDevices + cgroupMandatoryDevices);
           */
+      
     }
   }
   
@@ -508,7 +514,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   /*
    * LCE Resources Handler interface
    */
-
+  
   public void preExecute(ContainerId containerId, Resource containerResource)
       throws IOException {
     setupLimits(containerId, containerResource);
@@ -673,7 +679,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
   
   @VisibleForTesting
   GPUAllocator getGPUAllocator() { return gpuAllocator; }
-
+  
   @VisibleForTesting
   String[] getDefaultWhiteListEntries() {
     return DEFAULT_WHITELIST_ENTRIES;
