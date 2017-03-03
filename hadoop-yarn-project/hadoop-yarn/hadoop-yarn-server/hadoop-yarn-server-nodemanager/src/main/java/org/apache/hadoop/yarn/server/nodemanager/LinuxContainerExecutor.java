@@ -250,9 +250,8 @@ public class LinuxContainerExecutor extends ContainerExecutor {
   }
   
   @Override
-  public void recoverDeviceControlSystem() {
-    resourcesHandler.recoverDeviceControlSystem();
-    
+  public void recoverDeviceControlSystem(ContainerId containerId) {
+    resourcesHandler.recoverDeviceControlSystem(containerId);
   }
   
   @VisibleForTesting

@@ -140,7 +140,7 @@ public class DockerContainerExecutor extends ContainerExecutor {
   }
   
   @Override
-  public void recoverDeviceControlSystem() {
+  public void recoverDeviceControlSystem(ContainerId containerId) {
     LOG.info("Device recovery is not supported for docker");
   }
   

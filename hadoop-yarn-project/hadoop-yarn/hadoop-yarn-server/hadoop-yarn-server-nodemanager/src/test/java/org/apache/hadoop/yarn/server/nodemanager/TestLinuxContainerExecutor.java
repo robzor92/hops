@@ -480,7 +480,7 @@ public class TestLinuxContainerExecutor {
     }
   
     @Override
-    public void recoverDeviceControlSystem() {
+    public void recoverDeviceControlSystem(ContainerId containerId) {
     
     }
   }

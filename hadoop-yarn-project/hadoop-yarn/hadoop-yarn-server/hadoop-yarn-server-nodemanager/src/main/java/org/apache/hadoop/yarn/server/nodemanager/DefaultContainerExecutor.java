@@ -131,7 +131,7 @@ public class DefaultContainerExecutor extends ContainerExecutor {
   }
   
   @Override
-  public void recoverDeviceControlSystem() {
+  public void recoverDeviceControlSystem(ContainerId containerId) {
     LOG.info("Device recovery not working when Cgroups is disabled");
   }
   

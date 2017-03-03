@@ -123,7 +123,7 @@ public abstract class ContainerExecutor implements Configurable {
       LocalDirsHandlerService dirsHandler)
     throws IOException, InterruptedException;
   
-  public abstract void recoverDeviceControlSystem();
+  public abstract void recoverDeviceControlSystem(ContainerId containerId);
 
   /**
    * Launch the container on the node. This is a blocking call and returns only

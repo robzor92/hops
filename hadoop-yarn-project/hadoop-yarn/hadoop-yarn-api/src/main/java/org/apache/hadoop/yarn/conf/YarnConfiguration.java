@@ -840,6 +840,10 @@ RM_PREFIX + "resource-tracker.port";
   /** Number of Virtual CPU Cores which can be allocated for containers.*/
   public static final String NM_VCORES = NM_PREFIX + "resource.cpu-vcores";
   public static final int DEFAULT_NM_VCORES = 8;
+  
+  /** Number of GPUs which can be allocated for containers */
+  public static final String NM_GPUS = NM_PREFIX + "resource.gpus";
+  public static final int DEFAULT_NM_GPUS = 0;
 
   /** Percentage of overall CPU which can be allocated for containers. */
   public static final String NM_RESOURCE_PERCENTAGE_PHYSICAL_CPU_LIMIT =

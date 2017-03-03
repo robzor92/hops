@@ -254,7 +254,6 @@ public class ContainerManagerImpl extends CompositeService implements
       URISyntaxException {
     NMStateStoreService stateStore = context.getNMStateStore();
     if (stateStore.canRecover()) {
-      exec.recoverDeviceControlSystem();
       
       rsrcLocalizationSrvc.recoverLocalizedResources(
           stateStore.loadLocalizationState());
@@ -312,6 +311,8 @@ public class ContainerManagerImpl extends CompositeService implements
 
     LOG.info("Recovering " + containerId + " in state " + rcs.getStatus()
         + " with exit code " + rcs.getExitCode());
+  
+    exec.recoverDeviceControlSystem(containerId);
 
     if (context.getApplications().containsKey(appId)) {
       Credentials credentials = parseCredentials(launchContext);

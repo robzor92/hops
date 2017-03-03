@@ -21,6 +21,7 @@ import io.hops.GPUManagementLibrary;
 import io.hops.devices.Device;
 import io.hops.devices.GPUAllocator;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor;
@@ -46,7 +47,7 @@ public class TestCgroupsLCEResourcesHandler {
   
   static class MockClock implements Clock {
     long time;
-  
+    
     @Override
     public long getTime() {
       return time;
@@ -173,7 +174,7 @@ public class TestCgroupsLCEResourcesHandler {
       return gpuAllocator;
     }
   }
-
+  
   
   
   @Test
@@ -274,10 +275,10 @@ public class TestCgroupsLCEResourcesHandler {
     Assert.assertEquals(-1, ret[1]);
   }
   
-    public static File createMockCgroupMount(File parentDir, String type)
+  public static File createMockCgroupMount(File parentDir, String type)
       throws IOException {
-        return createMockCgroupMount(parentDir, type, "hadoop-yarn");
-      }
+    return createMockCgroupMount(parentDir, type, "hadoop-yarn");
+  }
   
   public static File createMockMTab(File parentDir) throws IOException {
     String cpuMtabContent =
@@ -410,22 +411,40 @@ public class TestCgroupsLCEResourcesHandler {
     
     // create mock mtab
     File mockMtab = createMockMTab(cgroupDir);
-  
+    
     ContainerId id = ContainerId.fromString("container_1_1_1_1");
-  
+    
     GPUAllocator gpuAllocator = Mockito.mock(GPUAllocator.class);
     Mockito.doReturn(true).when(gpuAllocator).isInitialized();
+    HashSet<Device> availableGPUs = new HashSet<>();
     
-    HashMap<String, HashSet<Device>> devices = new HashMap<>();
-    HashSet<Device> set = new HashSet<>();
-    set.add(new Device(195, 0));
-    set.add(new Device(195, 1));
-    devices.put("deny", set);
-    Mockito.doReturn(devices).when(gpuAllocator).allocate(id.toString(),
+    Device gpu0 = new Device(195, 0);
+    Device gpu1 = new Device(195, 1);
+    Device gpu2 = new Device(195, 2);
+    Device gpu3 = new Device(195, 3);
+    
+    availableGPUs.add(gpu0);
+    availableGPUs.add(gpu1);
+    availableGPUs.add(gpu2);
+    availableGPUs.add(gpu3);
+    
+    Mockito.doReturn(availableGPUs).when(gpuAllocator).getAvailableDevices();
+    
+    HashSet<Device> mandatoryDevices = new HashSet<>();
+    mandatoryDevices.add(new Device(0, 1));
+    mandatoryDevices.add(new Device(0, 2));
+    Mockito.doReturn(mandatoryDevices).when(gpuAllocator).getMandatoryDevices();
+    
+    HashMap<String, HashSet<Device>> map = new HashMap<>();
+    HashSet<Device> deniedGPUs = new HashSet<>();
+    deniedGPUs.add(gpu0);
+    deniedGPUs.add(gpu1);
+    map.put("deny", deniedGPUs);
+    Mockito.doReturn(map).when(gpuAllocator).allocate(id.toString(),
         2);
-    handler.setGPUAllocator(gpuAllocator);
     
     // setup our handler and call init()
+    handler.setGPUAllocator(gpuAllocator);
     handler.setMtabFile(mockMtab.getAbsolutePath());
     handler.init(mockLCE, plugin);
     File containerDirGPU = new File(cgroupMountDirGPU, id.toString());
@@ -435,13 +454,129 @@ public class TestCgroupsLCEResourcesHandler {
     Assert.assertTrue(containerDirGPU.exists());
     Assert.assertTrue(containerDirGPU.isDirectory());
     Assert.assertTrue(denyFile.exists());
-  
+    
     List<String> denyEntries = FileUtils.readLines(denyFile);
     Assert.assertTrue(denyEntries.size() == 2);
-    Assert.assertTrue(denyEntries.toString().contains("c 195:0 rwm"));
-    Assert.assertTrue(denyEntries.toString().contains("c 195:1 rwm"));
-
+    Assert.assertTrue(denyEntries.contains("c " + gpu0 + " rwm"));
+    Assert.assertTrue(denyEntries.contains("c " + gpu1 + " rwm"));
+    
+    File allowFile = new File(cgroupMountDirGPU, "devices.allow");
+    Assert.assertTrue(allowFile.exists());
+    List<String> allowEntries = FileUtils.readLines(allowFile);
+    
+    System.out.println(allowEntries);
+    Assert.assertTrue(allowEntries.contains("c " + gpu2 + " rwm"));
+    Assert.assertTrue(allowEntries.contains("c " + gpu3 + " rwm"));
+    
     FileUtils.deleteQuietly(cgroupDir);
+  }
+  
+  private static class CustomGPUmanagementLibrary implements GPUManagementLibrary {
+    
+    @Override
+    public boolean initialize() {
+      return true;
+    }
+    
+    @Override
+    public boolean shutDown() {
+      return true;
+    }
+    
+    @Override
+    public int getNumGPUs() {
+      return 8;
+    }
+    
+    @Override
+    public String queryMandatoryDevices() {
+      return "0:1 0:2 0:3";
+    }
+    
+    @Override
+    public String queryAvailableDevices() {
+      return "195:0 195:1 195:2 195:3 195:4 195:5 195:6 195:7";
+    }
+  }
+  
+  @Test
+  public void testContainerRecovery() throws IOException {
+    LinuxContainerExecutor mockLCE = new MockLinuxContainerExecutor();
+    CustomCgroupsLCEResourceHandler handler =
+        new CustomCgroupsLCEResourceHandler();
+    YarnConfiguration conf = new YarnConfiguration();
+    final int numGPUs = 8;
+    ResourceCalculatorPlugin plugin =
+        Mockito.mock(ResourceCalculatorPlugin.class);
+    Mockito.doReturn(numGPUs).when(plugin).getNumGPUs();
+    handler.setConf(conf);
+    handler.initConfig();
+    
+    // create mock cgroup
+    File cgroupMountDirCPU = createMockCgroupMount(cgroupDir, "cpu");
+    File cgroupMountDirGPU = createMockCgroupMount(cgroupDir, "devices");
+    
+    // create mock mtab
+    File mockMtab = createMockMTab(cgroupDir);
+    handler.setMtabFile(mockMtab.getAbsolutePath());
+    GPUAllocator gpuAllocator = new GPUAllocator(new
+        CustomGPUmanagementLibrary());
+    handler.setGPUAllocator(gpuAllocator);
+    handler.init(mockLCE, plugin);
+    
+    ContainerId id1 = ContainerId.fromString("container_1_1_1_1");
+    handler.preExecute(id1, Resource.newInstance(1024, 1, 2));
+    File containerDir1 = new File(cgroupMountDirGPU, id1.toString());
+    File allowFile1 = new File(containerDir1, "devices.allow");
+    FileOutputStream fos1 = FileUtils.openOutputStream(allowFile1);
+    fos1.write(("c 195:0 rwm\n" + "c 195:1 rwm\n").getBytes());
+    
+    ContainerId id2 = ContainerId.fromString("container_1_1_1_2");
+    handler.preExecute(id2, Resource.newInstance(1024, 1, 2));
+    File containerDir2 = new File(cgroupMountDirGPU, id2.toString());
+    File allowFile2 = new File(containerDir2, "devices.allow");
+    FileOutputStream fos2 = FileUtils.openOutputStream(allowFile2);
+    fos2.write(("c 195:2 rwm\n" + "c 195:3 rwm\n").getBytes());
+    
+    ContainerId id3 = ContainerId.fromString("container_1_1_1_3");
+    handler.preExecute(id3, Resource.newInstance(1024, 1, 2));
+    File containerDir3 = new File(cgroupMountDirGPU, id3.toString());
+    File allowFile3 = new File(containerDir3, "devices.allow");
+    FileOutputStream fos3 = FileUtils.openOutputStream(allowFile3);
+    fos3.write(("c 195:4 rwm\n" + "c 195:5 rwm\n").getBytes());
+  
+    gpuAllocator = new GPUAllocator(new
+        CustomGPUmanagementLibrary());
+    gpuAllocator.initialize();
+    handler =
+        new CustomCgroupsLCEResourceHandler();
+    conf = new YarnConfiguration();
+    plugin =
+        Mockito.mock(ResourceCalculatorPlugin.class);
+    Mockito.doReturn(numGPUs).when(plugin).getNumGPUs();
+    handler.setConf(conf);
+    handler.initConfig();
+    
+    handler.setMtabFile(mockMtab.getAbsolutePath());
+    handler.setGPUAllocator(gpuAllocator);
+    handler.init(mockLCE, plugin);
+    
+    //No recovery yet
+    Assert.assertEquals(8, gpuAllocator.getAvailableDevices().size());
+    Assert.assertTrue(allowFile1.exists());
+    System.out.println("Test path " + allowFile1.getAbsolutePath());
+    handler.recoverDeviceControlSystem(id1);
+    Assert.assertEquals(6, gpuAllocator.getAvailableDevices().size());
+    Assert.assertTrue(allowFile2.exists());
+    handler.recoverDeviceControlSystem(id2);
+    Assert.assertEquals(4, gpuAllocator.getAvailableDevices().size());
+    Assert.assertTrue(allowFile3.exists());
+    handler.recoverDeviceControlSystem(id3);
+    Assert.assertEquals(2, gpuAllocator.getAvailableDevices().size());
+    HashSet<Device> availableGPUs = new HashSet<>(gpuAllocator
+        .getAvailableDevices());
+    Assert.assertTrue(availableGPUs.contains(new Device(195, 6)));
+    Assert.assertTrue(availableGPUs.contains(new Device(195, 7)));
   }
   
   @Test
@@ -456,31 +591,55 @@ public class TestCgroupsLCEResourcesHandler {
     Mockito.doReturn(numGPUs).when(plugin).getNumGPUs();
     handler.setConf(conf);
     handler.initConfig();
-  
+    
     // create mock cgroup
     File cgroupMountDirCPU = createMockCgroupMount(cgroupDir, "cpu");
     File cgroupMountDirGPU = createMockCgroupMount(cgroupDir, "devices");
-  
+    
     // create mock mtab
     File mockMtab = createMockMTab(cgroupDir);
-  
+    
     GPUAllocator gpuAllocator = Mockito.mock(GPUAllocator.class);
     Mockito.doReturn(true).when(gpuAllocator).isInitialized();
-  
+    
+    HashSet<Device> availableGPUs = new HashSet<>();
+    
+    Device gpu0 = new Device(195, 0);
+    Device gpu1 = new Device(195, 1);
+    Device gpu2 = new Device(195, 2);
+    Device gpu3 = new Device(195, 3);
+    
+    availableGPUs.add(gpu0);
+    availableGPUs.add(gpu1);
+    availableGPUs.add(gpu2);
+    availableGPUs.add(gpu3);
+    Mockito.doReturn(availableGPUs).when(gpuAllocator).getAvailableDevices();
+    
+    HashSet<Device> mandatoryDevices = new HashSet<>();
+    mandatoryDevices.add(new Device(0, 1));
+    mandatoryDevices.add(new Device(0, 2));
+    Mockito.doReturn(mandatoryDevices).when(gpuAllocator).getMandatoryDevices();
+    
     // setup our handler and call init()
     handler.setMtabFile(mockMtab.getAbsolutePath());
     handler.setGPUAllocator(gpuAllocator);
     handler.init(mockLCE, plugin);
-
+    
     List<String> cgroupDeviceDirEntries = FileUtils.readLines(new File
         (cgroupMountDirGPU, "devices.allow"), "UTF-8");
-
-      for(String defaultDevice : handler.getDefaultWhiteListEntries()) {
+    
+    for(String defaultDevice : handler.getDefaultWhiteListEntries()) {
       Assert.assertTrue(cgroupDeviceDirEntries.contains(defaultDevice));
+    }
+    for(Device gpu : availableGPUs) {
+      Assert.assertTrue(cgroupDeviceDirEntries.contains("c " + gpu.toString() + " rwm"));
+    }
+    for(Device mandatoryDev : mandatoryDevices) {
+      Assert.assertTrue(cgroupDeviceDirEntries.contains("c " + mandatoryDev.toString() + " rwm"));
     }
     FileUtils.deleteQuietly(cgroupDir);
   }
-
+  
   public static File createMockCgroupMount(File parentDir, String type,
       String hierarchy) throws IOException {
     File cgroupMountDir =
