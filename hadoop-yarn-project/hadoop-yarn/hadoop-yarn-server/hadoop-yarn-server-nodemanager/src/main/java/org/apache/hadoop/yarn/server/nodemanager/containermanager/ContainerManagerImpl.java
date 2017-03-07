@@ -312,8 +312,9 @@ public class ContainerManagerImpl extends CompositeService implements
     LOG.info("Recovering " + containerId + " in state " + rcs.getStatus()
         + " with exit code " + rcs.getExitCode());
   
-    exec.recoverDeviceControlSystem(containerId);
-
+    if(!(rcs.getStatus() == RecoveredContainerStatus.REQUESTED)) {
+      exec.recoverDeviceControlSystem(containerId);
+    }
     if (context.getApplications().containsKey(appId)) {
       Credentials credentials = parseCredentials(launchContext);
       Container container = new ContainerImpl(getConfig(), dispatcher,
