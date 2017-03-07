@@ -76,7 +76,7 @@ public class ContainersMonitorImpl extends AbstractService implements
 
   private long maxVCoresAllottedForContainers;
   
-  private int maxGPUsAllottedForContainers;
+  private long maxGPUsAllottedForContainers;
 
   private static final long UNKNOWN_MEMORY_LIMIT = -1L;
   private int nodeCpuPercentageForYARN;
@@ -234,16 +234,18 @@ public class ContainersMonitorImpl extends AbstractService implements
     private long vmemLimit;
     private long pmemLimit;
     private int cpuVcores;
+    private int gpus;
 
     public ProcessTreeInfo(ContainerId containerId, String pid,
         ResourceCalculatorProcessTree pTree, long vmemLimit, long pmemLimit,
-        int cpuVcores) {
+        int cpuVcores, int gpus) {
       this.containerId = containerId;
       this.pid = pid;
       this.pTree = pTree;
       this.vmemLimit = vmemLimit;
       this.pmemLimit = pmemLimit;
       this.cpuVcores = cpuVcores;
+      this.gpus = gpus;
     }
 
     public ContainerId getContainerId() {
@@ -284,6 +286,12 @@ public class ContainersMonitorImpl extends AbstractService implements
     public int getCpuVcores() {
       return this.cpuVcores;
     }
+  
+    /**
+     * Return the number of GPUs assigned
+     * @return
+     */
+    public int getGPUs() { return this.gpus; }
   }
 
 
@@ -430,10 +438,11 @@ public class ContainersMonitorImpl extends AbstractService implements
                       .forContainer(containerId, containerMetricsPeriodMs,
                       containerMetricsUnregisterDelayMs);
                   int cpuVcores = ptInfo.getCpuVcores();
+                  int gpus = ptInfo.getGPUs();
                   final int vmemLimit = (int) (ptInfo.getVmemLimit() >> 20);
                   final int pmemLimit = (int) (ptInfo.getPmemLimit() >> 20);
                   usageMetrics.recordResourceLimit(
-                      vmemLimit, pmemLimit, cpuVcores);
+                      vmemLimit, pmemLimit, cpuVcores, gpus);
                   usageMetrics.recordProcessId(pId);
                 }
               }
@@ -604,7 +613,12 @@ public class ContainersMonitorImpl extends AbstractService implements
   public long getVCoresAllocatedForContainers() {
     return this.maxVCoresAllottedForContainers;
   }
-
+  
+  @Override
+  public long getGPUsAllocatedForContainers() {
+    return this.maxGPUsAllottedForContainers;
+  }
+  
   /**
    * Is the total virtual memory check enabled?
    *
@@ -631,7 +645,7 @@ public class ContainersMonitorImpl extends AbstractService implements
         ProcessTreeInfo processTreeInfo =
             new ProcessTreeInfo(containerId, null, null,
                 startEvent.getVmemLimit(), startEvent.getPmemLimit(),
-                startEvent.getCpuVcores());
+                startEvent.getCpuVcores(), startEvent.getGPUs());
         this.containersToBeAdded.put(containerId, processTreeInfo);
       }
       break;
