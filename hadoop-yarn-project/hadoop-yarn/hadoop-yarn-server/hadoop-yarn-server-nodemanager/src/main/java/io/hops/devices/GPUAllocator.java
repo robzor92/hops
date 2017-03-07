@@ -58,7 +58,7 @@ public class GPUAllocator {
     mandatoryDevices = new HashSet<>();
 
     this.gpuManagementLibrary = gpuManagementLibrary;
-
+    initialize();
   }
 
   /**
