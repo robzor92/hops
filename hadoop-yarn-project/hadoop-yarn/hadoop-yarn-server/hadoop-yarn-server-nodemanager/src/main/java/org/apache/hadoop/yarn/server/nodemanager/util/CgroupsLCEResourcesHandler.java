@@ -173,7 +173,6 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       throws IOException {
     initConfig();
     
-    
     if(NodeManagerHardwareUtils.getNodeGPUs(plugin, conf) > 0) {
       if(!getGPUAllocator().isInitialized()) {
         gpuAllocator = GPUAllocator.getInstance();
@@ -304,7 +303,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     
     StringBuilder allAllowedDevicesStr = new StringBuilder();
     
-    HashSet<Device> gpuDevices = getGPUAllocator().getMandatoryDevices();
+    HashSet<Device> gpuDevices = getGPUAllocator().getAvailableDevices();
     for(Device gpuDevice: gpuDevices) {
       allAllowedDevicesStr.append("c " + gpuDevice.toString() + " rwm\n");
     }
@@ -318,8 +317,6 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     for(String defaultDevice: DEFAULT_WHITELIST_ENTRIES) {
       allAllowedDevicesStr.append(defaultDevice + "\n");
     }
-    
-    System.out.println("allowed " + allAllowedDevicesStr.toString());
     
     updateCgroup("devices", "", DEVICES_ALLOW, allAllowedDevicesStr.toString());
   }
@@ -560,16 +557,17 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
     for (File container : containers) {
       try {
         if(container.getName().equals(containerId.toString())) {
+
           String allowFileContents = FileUtils.readFileToString(new File
-              (container.getAbsolutePath() + CONTROLLER_DEVICES + "." +
-                  DEVICES_ALLOW, "UTF-8"));
+              (container.getAbsolutePath(), CONTROLLER_DEVICES + "." +
+                  DEVICES_ALLOW), "UTF-8");
           getGPUAllocator().recoverAllocation(container.getName(),
               allowFileContents);
           break;
         }
       } catch (IOException e) {
         LOG.error("Could not retrieve contents of file in path " + container
-            .getAbsolutePath() + "devices.allow", e);
+            .getAbsolutePath(), e);
       }
     }
   }

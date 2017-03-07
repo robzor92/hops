@@ -91,7 +91,12 @@ public class NodeManagerHardwareUtils {
   
   public static int getNodeGPUs(ResourceCalculatorPlugin plugin,
       Configuration conf) {
-    //TODO Make this number configurable (OS-query or configurable)
     return plugin.getNumGPUs();
   }
+  
+  public static int getNodeGPUs(Configuration conf) {
+        ResourceCalculatorPlugin plugin =
+                ResourceCalculatorPlugin.getResourceCalculatorPlugin(null, conf);
+        return NodeManagerHardwareUtils.getNodeGPUs(plugin, conf);
+      }
 }
