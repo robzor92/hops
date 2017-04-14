@@ -45,17 +45,18 @@ import org.apache.hadoop.yarn.util.YarnVersionInfo;
 import org.mortbay.log.Log;
 
 public class MockNM {
-
+  
   private int responseId;
   private NodeId nodeId;
   private final int memory;
   private final int vCores;
+  private final int gpus;
   private ResourceTrackerService resourceTracker;
   private int httpPort = 2;
   private MasterKey currentContainerTokenMasterKey;
   private MasterKey currentNMTokenMasterKey;
   private String version;
-
+  
   public MockNM(String nodeIdStr, int memory, ResourceTrackerService resourceTracker) {
     // scale vcores based on the requested memory
     this(nodeIdStr, memory,
@@ -63,26 +64,32 @@ public class MockNM {
             YarnConfiguration.DEFAULT_NM_PMEM_MB),
         resourceTracker);
   }
-
+  
   public MockNM(String nodeIdStr, int memory, int vcores,
       ResourceTrackerService resourceTracker) {
-    this(nodeIdStr, memory, vcores, resourceTracker, YarnVersionInfo.getVersion());
+    this(nodeIdStr, memory, vcores, 0, resourceTracker, YarnVersionInfo
+        .getVersion());
   }
-
-  public MockNM(String nodeIdStr, int memory, int vcores,
+  
+  public MockNM(String nodeIdStr, int memory, int vcores, int gpus,
       ResourceTrackerService resourceTracker, String version) {
     this.memory = memory;
     this.vCores = vcores;
+    this.gpus = gpus;
     this.resourceTracker = resourceTracker;
     this.version = version;
     String[] splits = nodeIdStr.split(":");
     nodeId = BuilderUtils.newNodeId(splits[0], Integer.parseInt(splits[1]));
   }
-
+  
+  public MockNM(String nodeIdStr, int memory, int vcores, int gcores, ResourceTrackerService resourceTracker) {
+    this(nodeIdStr, memory, vcores, gcores, resourceTracker, YarnVersionInfo.getVersion());
+  }
+  
   public NodeId getNodeId() {
     return nodeId;
   }
-
+  
   public int getHttpPort() {
     return httpPort;
   }
@@ -90,19 +97,19 @@ public class MockNM {
   public void setHttpPort(int port) {
     httpPort = port;
   }
-
+  
   public void setResourceTrackerService(ResourceTrackerService resourceTracker) {
     this.resourceTracker = resourceTracker;
   }
-
+  
   public void containerStatus(ContainerStatus containerStatus) throws Exception {
-    Map<ApplicationId, List<ContainerStatus>> conts = 
+    Map<ApplicationId, List<ContainerStatus>> conts =
         new HashMap<ApplicationId, List<ContainerStatus>>();
     conts.put(containerStatus.getContainerId().getApplicationAttemptId().getApplicationId(),
         Arrays.asList(new ContainerStatus[] { containerStatus }));
     nodeHeartbeat(conts, true);
   }
-
+  
   public RegisterNodeManagerResponse registerNode() throws Exception {
     return registerNode(null, null);
   }
@@ -111,7 +118,7 @@ public class MockNM {
       List<ApplicationId> runningApplications) throws Exception {
     return registerNode(null, runningApplications);
   }
-
+  
   public RegisterNodeManagerResponse registerNode(
       List<NMContainerStatus> containerReports,
       List<ApplicationId> runningApplications) throws Exception {
@@ -119,7 +126,7 @@ public class MockNM {
         RegisterNodeManagerRequest.class);
     req.setNodeId(nodeId);
     req.setHttpPort(httpPort);
-    Resource resource = BuilderUtils.newResource(memory, vCores);
+    Resource resource = BuilderUtils.newResource(memory, vCores, gpus);
     req.setResource(resource);
     req.setContainerStatuses(containerReports);
     req.setNMVersion(version);
@@ -129,14 +136,14 @@ public class MockNM {
     this.currentContainerTokenMasterKey =
         registrationResponse.getContainerTokenMasterKey();
     this.currentNMTokenMasterKey = registrationResponse.getNMTokenMasterKey();
-    return registrationResponse;    
+    return registrationResponse;
   }
   
   public NodeHeartbeatResponse nodeHeartbeat(boolean isHealthy) throws Exception {
     return nodeHeartbeat(new HashMap<ApplicationId, List<ContainerStatus>>(),
         isHealthy, ++responseId);
   }
-
+  
   public NodeHeartbeatResponse nodeHeartbeat(ApplicationAttemptId attemptId,
       long containerId, ContainerState containerState) throws Exception {
     HashMap<ApplicationId, List<ContainerStatus>> nodeUpdate =
@@ -151,12 +158,12 @@ public class MockNM {
     nodeUpdate.put(attemptId.getApplicationId(), containerStatusList);
     return nodeHeartbeat(nodeUpdate, true);
   }
-
+  
   public NodeHeartbeatResponse nodeHeartbeat(Map<ApplicationId,
       List<ContainerStatus>> conts, boolean isHealthy) throws Exception {
     return nodeHeartbeat(conts, isHealthy, ++responseId);
   }
-
+  
   public NodeHeartbeatResponse nodeHeartbeat(Map<ApplicationId,
       List<ContainerStatus>> conts, boolean isHealthy, int resId) throws Exception {
     NodeHeartbeatRequest req = Records.newRecord(NodeHeartbeatRequest.class);
@@ -181,25 +188,29 @@ public class MockNM {
     MasterKey masterKeyFromRM = heartbeatResponse.getContainerTokenMasterKey();
     if (masterKeyFromRM != null
         && masterKeyFromRM.getKeyId() != this.currentContainerTokenMasterKey
-            .getKeyId()) {
+        .getKeyId()) {
       this.currentContainerTokenMasterKey = masterKeyFromRM;
     }
-
+    
     masterKeyFromRM = heartbeatResponse.getNMTokenMasterKey();
     if (masterKeyFromRM != null
         && masterKeyFromRM.getKeyId() != this.currentNMTokenMasterKey
-            .getKeyId()) {
+        .getKeyId()) {
       this.currentNMTokenMasterKey = masterKeyFromRM;
     }
     
     return heartbeatResponse;
   }
-
+  
   public int getMemory() {
     return memory;
   }
-
+  
   public int getvCores() {
     return vCores;
+  }
+  
+  public int getGpus() {
+    return gpus;
   }
 }

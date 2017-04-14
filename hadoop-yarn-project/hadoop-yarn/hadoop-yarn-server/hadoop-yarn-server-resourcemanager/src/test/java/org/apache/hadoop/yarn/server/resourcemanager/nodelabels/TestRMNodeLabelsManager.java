@@ -207,7 +207,7 @@ public class TestRMNodeLabelsManager extends NodeLabelTestBase {
   
   @Test(timeout=5000)
   public void testGetQueueResource() throws Exception {
-    Resource clusterResource = Resource.newInstance(9999, 1);
+    Resource clusterResource = Resource.newInstance(9999, 1, 1);
     
     /*
      * Node->Labels:

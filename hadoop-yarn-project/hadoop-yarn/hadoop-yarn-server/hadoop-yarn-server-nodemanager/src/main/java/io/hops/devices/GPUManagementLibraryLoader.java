@@ -39,7 +39,7 @@ public class GPUManagementLibraryLoader {
     } catch (InstantiationException e) {
       throw new GPUManagementLibraryException(e);
     } catch (UnsatisfiedLinkError e) {
-      LOG.warn("Could not load JNI library for GPU");
+      LOG.warn("Could not load JNI library for GPU management");
     }
     return gpuManagementLibrary;
   }

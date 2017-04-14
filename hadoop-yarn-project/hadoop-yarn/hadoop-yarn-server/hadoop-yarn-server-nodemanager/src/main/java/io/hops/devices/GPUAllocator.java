@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
 
 public class GPUAllocator {
   
-  private static final GPUAllocator gpuAllocator = new GPUAllocator();
   final static Log LOG = LogFactory.getLog(GPUAllocator.class);
+  private static final GPUAllocator gpuAllocator = new GPUAllocator();
 
   private HashSet<Device> availableDevices;
   private HashMap<String, HashSet<Device>> containerDeviceAllocation;
@@ -45,31 +45,30 @@ public class GPUAllocator {
       gpuManagementLibrary =
           GPUManagementLibraryLoader.load(GPU_MANAGEMENT_LIBRARY_CLASSNAME);
     } catch(GPUManagementLibraryException gpue) {
-      LOG.info("Could not locate libhops-nvml.so, no GPUs will be offered " +
-          "by this NM");
+      LOG.info("Could not load GPU management library");
     }
-
   }
   
   @VisibleForTesting
-  public GPUAllocator(GPUManagementLibrary gpuManagementLibrary) {
+  public GPUAllocator(GPUManagementLibrary gpuManagementLibrary, int
+      configuredGPUs) {
     availableDevices = new HashSet<>();
     containerDeviceAllocation = new HashMap<>();
     mandatoryDevices = new HashSet<>();
 
     this.gpuManagementLibrary = gpuManagementLibrary;
-    initialize();
+    initialize(configuredGPUs);
   }
 
   /**
    * Initialize the NVML library to check that it was setup correctly
    * @return boolean for success or not
    */
-  public boolean initialize() {
+  public boolean initialize(int configuredGPUs) {
       if(initialized == false) {
         initialized = gpuManagementLibrary.initialize();
+        initAvailableDevices(configuredGPUs);
         initMandatoryDevices();
-        initAvailableDevices();
       }
     return this.initialized;
   }
@@ -115,9 +114,9 @@ public class GPUAllocator {
    * may be scheduled and isolated for containers
    */
   //TODO pattern match validator, expecting device numbers to be on form of (major:minor)
-  private void initAvailableDevices() {
+  private void initAvailableDevices(int configuredGPUs) {
     String[] availableDeviceIds = gpuManagementLibrary
-        .queryAvailableDevices().split(" ");
+        .queryAvailableDevices(configuredGPUs).split(" ");
     for(int i = 0; i < availableDeviceIds.length; i++) {
       String[] majorMinorPair = availableDeviceIds[i].split(":");
       availableDevices.add(new Device(Integer.parseInt
@@ -169,12 +168,15 @@ public class GPUAllocator {
   public synchronized HashMap<String, HashSet<Device>> allocate(String
       containerName, int gpus)
       throws IOException {
+    LOG.info("Trying to allocate " + gpus + " gpus");
+    LOG.info("Currently unallocated gpus: " + availableDevices.toString());
+    HashSet<Device> currentlyAllocatedGPUs = getAllocatedGPUs();
+    LOG.info("Currently allocated gpus: " + currentlyAllocatedGPUs);
     
     if(availableDevices.size() >= gpus) {
       //Containing entries for GPUs to allow or deny
       HashMap<String, HashSet<Device>> cGroupDeviceMapping = new HashMap<>();
       
-      HashSet<Device> currentlyAllocatedGPUs = getAllocatedGPUs();
       //deny devices already in use
       cGroupDeviceMapping.put("deny", currentlyAllocatedGPUs);
       
@@ -186,12 +188,18 @@ public class GPUAllocator {
         deviceAllocation.add(gpu);
         gpus--;
       }
+      
+      LOG.info("Gpus to allocate for " + containerName + " = " +
+          deviceAllocation);
         
       containerDeviceAllocation.put(containerName, deviceAllocation);
       //only allow access to allocated GPUs
       cGroupDeviceMapping.put("allow", deviceAllocation);
+
       //need to deny remaining available devices
       cGroupDeviceMapping.get("deny").addAll(availableDevices);
+      LOG.info("Gpus to deny for " + containerName + " = " +
+          cGroupDeviceMapping.get("deny"));
       return cGroupDeviceMapping;
       
     } else {

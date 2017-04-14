@@ -239,6 +239,20 @@ public class TestCapacityScheduler {
         e.getMessage().startsWith(
           "Invalid resource scheduler vcores"));
     }
+  
+    conf = new YarnConfiguration();
+    conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_GPUS, 2);
+    conf.setInt(YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_GPUS, 1);
+    try {
+      scheduler.reinitialize(conf, mockContext);
+      fail("Exception is expected because the min gpu allocation is" +
+          " larger than the max gpu allocation.");
+    } catch (YarnRuntimeException e) {
+      // Exception is expected.
+      assertTrue("The thrown exception is not the expected one.",
+          e.getMessage().startsWith(
+              "Invalid resource scheduler gpu"));
+    }
   }
 
   private org.apache.hadoop.yarn.server.resourcemanager.NodeManager
@@ -265,13 +279,13 @@ public class TestCapacityScheduler {
     String host_0 = "host_0";
     org.apache.hadoop.yarn.server.resourcemanager.NodeManager nm_0 = 
       registerNode(host_0, 1234, 2345, NetworkTopology.DEFAULT_RACK, 
-          Resources.createResource(4 * GB, 1));
+          Resources.createResource(4 * GB, 1, 1));
     
     // Register node2
     String host_1 = "host_1";
     org.apache.hadoop.yarn.server.resourcemanager.NodeManager nm_1 = 
-      registerNode(host_1, 1234, 2345, NetworkTopology.DEFAULT_RACK, 
-          Resources.createResource(2 * GB, 1));
+      registerNode(host_1, 1234, 2345, NetworkTopology.DEFAULT_RACK,
+          Resources.createResource(2 * GB, 1, 1));
 
     // ResourceRequest priorities
     Priority priority_0 = 
@@ -286,10 +300,10 @@ public class TestCapacityScheduler {
     application_0.addNodeManager(host_0, 1234, nm_0);
     application_0.addNodeManager(host_1, 1234, nm_1);
 
-    Resource capability_0_0 = Resources.createResource(1 * GB, 1);
+    Resource capability_0_0 = Resources.createResource(1 * GB, 1, 1);
     application_0.addResourceRequestSpec(priority_1, capability_0_0);
     
-    Resource capability_0_1 = Resources.createResource(2 * GB, 1);
+    Resource capability_0_1 = Resources.createResource(2 * GB, 1, 1);
     application_0.addResourceRequestSpec(priority_0, capability_0_1);
 
     Task task_0_0 = new Task(application_0, priority_1, 
@@ -303,10 +317,10 @@ public class TestCapacityScheduler {
     application_1.addNodeManager(host_0, 1234, nm_0);
     application_1.addNodeManager(host_1, 1234, nm_1);
     
-    Resource capability_1_0 = Resources.createResource(3 * GB, 1);
+    Resource capability_1_0 = Resources.createResource(3 * GB, 1, 1);
     application_1.addResourceRequestSpec(priority_1, capability_1_0);
     
-    Resource capability_1_1 = Resources.createResource(2 * GB, 1);
+    Resource capability_1_1 = Resources.createResource(2 * GB, 1, 1);
     application_1.addResourceRequestSpec(priority_0, capability_1_1);
 
     Task task_1_0 = new Task(application_1, priority_1, 
@@ -375,7 +389,7 @@ public class TestCapacityScheduler {
 
     LOG.info("--- END: testCapacityScheduler ---");
   }
-
+  
   private void nodeUpdate(
       org.apache.hadoop.yarn.server.resourcemanager.NodeManager nm) {
     RMNode node = resourceManager.getRMContext().getRMNodes().get(nm.getNodeId());
@@ -2091,11 +2105,11 @@ public class TestCapacityScheduler {
     MockRM rm = new MockRM(conf);
     rm.start();
 
-    MockNM nm1 = rm.registerNode("127.0.0.1:1234", 10 * GB, 1);
+    MockNM nm1 = rm.registerNode("127.0.0.1:1234", 10 * GB, 1, 1);
 
     // register extra nodes to bump up cluster resource
-    MockNM nm2 = rm.registerNode("127.0.0.1:1235", 10 * GB, 4);
-    rm.registerNode("127.0.0.1:1236", 10 * GB, 4);
+    MockNM nm2 = rm.registerNode("127.0.0.1:1235", 10 * GB, 4, 4);
+    rm.registerNode("127.0.0.1:1236", 10 * GB, 4, 4);
 
     RMApp app1 = rm.submitApp(1024);
     // kick the scheduling

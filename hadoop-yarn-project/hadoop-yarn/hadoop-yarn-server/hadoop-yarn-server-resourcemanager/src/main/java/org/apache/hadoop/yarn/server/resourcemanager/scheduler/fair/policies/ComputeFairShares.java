@@ -33,21 +33,21 @@ import org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair.Schedulable;
  * preempted.
  */
 public class ComputeFairShares {
-  
+
   private static final int COMPUTE_FAIR_SHARES_ITERATIONS = 25;
 
   /**
    * Compute fair share of the given schedulables.Fair share is an allocation of
    * shares considering only active schedulables ie schedulables which have
    * running apps.
-   * 
+   *
    * @param schedulables
    * @param totalResources
    * @param type
    */
   public static void computeShares(
-      Collection<? extends Schedulable> schedulables, Resource totalResources,
-      ResourceType type) {
+          Collection<? extends Schedulable> schedulables, Resource totalResources,
+          ResourceType type) {
     computeSharesInternal(schedulables, totalResources, type, false);
   }
 
@@ -61,8 +61,8 @@ public class ComputeFairShares {
    * @param type
    */
   public static void computeSteadyShares(
-      Collection<? extends FSQueue> queues, Resource totalResources,
-      ResourceType type) {
+          Collection<? extends FSQueue> queues, Resource totalResources,
+          ResourceType type) {
     computeSharesInternal(queues, totalResources, type, true);
   }
 
@@ -109,12 +109,12 @@ public class ComputeFairShares {
    * iterations of binary search is a constant (dependent on desired precision).
    */
   private static void computeSharesInternal(
-      Collection<? extends Schedulable> allSchedulables,
-      Resource totalResources, ResourceType type, boolean isSteadyShare) {
+          Collection<? extends Schedulable> allSchedulables,
+          Resource totalResources, ResourceType type, boolean isSteadyShare) {
 
     Collection<Schedulable> schedulables = new ArrayList<Schedulable>();
     int takenResources = handleFixedFairShares(
-        allSchedulables, schedulables, isSteadyShare, type);
+            allSchedulables, schedulables, isSteadyShare, type);
 
     if (schedulables.isEmpty()) {
       return;
@@ -126,19 +126,19 @@ public class ComputeFairShares {
     for (Schedulable sched : schedulables) {
       int maxShare = getResourceValue(sched.getMaxShare(), type);
       totalMaxShare = (int) Math.min((long)maxShare + (long)totalMaxShare,
-          Integer.MAX_VALUE);
+              Integer.MAX_VALUE);
       if (totalMaxShare == Integer.MAX_VALUE) {
         break;
       }
     }
 
     int totalResource = Math.max((getResourceValue(totalResources, type) -
-        takenResources), 0);
+            takenResources), 0);
     totalResource = Math.min(totalMaxShare, totalResource);
 
     double rMax = 1.0;
     while (resourceUsedWithWeightToResourceRatio(rMax, schedulables, type)
-        < totalResource) {
+            < totalResource) {
       rMax *= 2.0;
     }
     // Perform the binary search for up to COMPUTE_FAIR_SHARES_ITERATIONS steps
@@ -147,7 +147,7 @@ public class ComputeFairShares {
     for (int i = 0; i < COMPUTE_FAIR_SHARES_ITERATIONS; i++) {
       double mid = (left + right) / 2.0;
       int plannedResourceUsed = resourceUsedWithWeightToResourceRatio(
-          mid, schedulables, type);
+              mid, schedulables, type);
       if (plannedResourceUsed == totalResource) {
         right = mid;
         break;
@@ -161,10 +161,10 @@ public class ComputeFairShares {
     for (Schedulable sched : schedulables) {
       if (isSteadyShare) {
         setResourceValue(computeShare(sched, right, type),
-            ((FSQueue) sched).getSteadyFairShare(), type);
+                ((FSQueue) sched).getSteadyFairShare(), type);
       } else {
         setResourceValue(
-            computeShare(sched, right, type), sched.getFairShare(), type);
+                computeShare(sched, right, type), sched.getFairShare(), type);
       }
     }
   }
@@ -174,7 +174,7 @@ public class ComputeFairShares {
    * w2rRatio, for use in the computeFairShares algorithm as described in #
    */
   private static int resourceUsedWithWeightToResourceRatio(double w2rRatio,
-      Collection<? extends Schedulable> schedulables, ResourceType type) {
+                                                           Collection<? extends Schedulable> schedulables, ResourceType type) {
     int resourcesTaken = 0;
     for (Schedulable sched : schedulables) {
       int share = computeShare(sched, w2rRatio, type);
@@ -188,7 +188,7 @@ public class ComputeFairShares {
    * weight-to-resource ratio w2rRatio.
    */
   private static int computeShare(Schedulable sched, double w2rRatio,
-      ResourceType type) {
+                                  ResourceType type) {
     double share = sched.getWeights().getWeight(type) * w2rRatio;
     share = Math.max(share, getResourceValue(sched.getMinShare(), type));
     share = Math.min(share, getResourceValue(sched.getMaxShare(), type));
@@ -201,9 +201,9 @@ public class ComputeFairShares {
    * and adds the remaining to the passed nonFixedSchedulables.
    */
   private static int handleFixedFairShares(
-      Collection<? extends Schedulable> schedulables,
-      Collection<Schedulable> nonFixedSchedulables,
-      boolean isSteadyShare, ResourceType type) {
+          Collection<? extends Schedulable> schedulables,
+          Collection<Schedulable> nonFixedSchedulables,
+          boolean isSteadyShare, ResourceType type) {
     int totalResource = 0;
 
     for (Schedulable sched : schedulables) {
@@ -212,12 +212,12 @@ public class ComputeFairShares {
         nonFixedSchedulables.add(sched);
       } else {
         setResourceValue(fixedShare,
-            isSteadyShare
-                ? ((FSQueue)sched).getSteadyFairShare()
-                : sched.getFairShare(),
-            type);
+                isSteadyShare
+                        ? ((FSQueue)sched).getSteadyFairShare()
+                        : sched.getFairShare(),
+                type);
         totalResource = (int) Math.min((long)totalResource + (long)fixedShare,
-            Integer.MAX_VALUE);
+                Integer.MAX_VALUE);
       }
     }
     return totalResource;
@@ -230,7 +230,7 @@ public class ComputeFairShares {
    * or the Schedulable is not active for instantaneous fairshare.
    */
   private static int getFairShareIfFixed(Schedulable sched,
-      boolean isSteadyShare, ResourceType type) {
+                                         boolean isSteadyShare, ResourceType type) {
 
     // Check if maxShare is 0
     if (getResourceValue(sched.getMaxShare(), type) <= 0) {
@@ -239,7 +239,7 @@ public class ComputeFairShares {
 
     // For instantaneous fairshares, check if queue is active
     if (!isSteadyShare &&
-        (sched instanceof FSQueue) && !((FSQueue)sched).isActive()) {
+            (sched instanceof FSQueue) && !((FSQueue)sched).isActive()) {
       return 0;
     }
 
@@ -254,25 +254,30 @@ public class ComputeFairShares {
 
   private static int getResourceValue(Resource resource, ResourceType type) {
     switch (type) {
-    case MEMORY:
-      return resource.getMemory();
-    case CPU:
-      return resource.getVirtualCores();
-    default:
-      throw new IllegalArgumentException("Invalid resource");
+      case MEMORY:
+        return resource.getMemory();
+      case CPU:
+        return resource.getVirtualCores();
+      case GPU:
+        return resource.getGPUs();
+      default:
+        throw new IllegalArgumentException("Invalid resource");
     }
   }
-  
+
   private static void setResourceValue(int val, Resource resource, ResourceType type) {
     switch (type) {
-    case MEMORY:
-      resource.setMemory(val);
-      break;
-    case CPU:
-      resource.setVirtualCores(val);
-      break;
-    default:
-      throw new IllegalArgumentException("Invalid resource");
+      case MEMORY:
+        resource.setMemory(val);
+        break;
+      case CPU:
+        resource.setVirtualCores(val);
+        break;
+      case GPU:
+        resource.setGPUs(0);
+        break;
+      default:
+        throw new IllegalArgumentException("Invalid resource");
     }
   }
 }

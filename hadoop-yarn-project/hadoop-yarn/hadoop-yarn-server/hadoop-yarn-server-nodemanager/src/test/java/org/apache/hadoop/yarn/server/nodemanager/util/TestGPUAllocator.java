@@ -43,7 +43,7 @@ public class TestGPUAllocator {
         }
 
         @Override
-        public String queryAvailableDevices() {
+        public String queryAvailableDevices(int configuredGPUs) {
             return "195:0 195:1 195:2 195:3 195:4 195:5 195:6 195:7";
         }
     }
@@ -51,7 +51,7 @@ public class TestGPUAllocator {
     private static class CustomGPUAllocator extends GPUAllocator {
 
         public CustomGPUAllocator(GPUManagementLibrary gpuManagementLibrary) {
-            super(gpuManagementLibrary);
+            super(gpuManagementLibrary, 8);
         }
     }
 
@@ -61,7 +61,7 @@ public class TestGPUAllocator {
 
         CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
         CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
-        customGPUAllocator.initialize();
+        customGPUAllocator.initialize(8);
         HashSet<Device> initialAvailableGPUs = customGPUAllocator.getAvailableDevices();
         int numInitialAvailableGPUs = initialAvailableGPUs.size();
 
@@ -86,13 +86,15 @@ public class TestGPUAllocator {
 
         Assert.assertEquals(0, Sets.intersection(firstAllocation.get("allow"), secondAllocation.get("allow")).size());
         customGPUAllocator.release(secondId.toString());
+
+        Assert.assertEquals(numInitialAvailableGPUs, customGPUAllocator.getAvailableDevices().size());
     }
 
     @Test
     public void testGPUAllocatorRecovery() throws IOException{
         CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
         CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
-        customGPUAllocator.initialize();
+        customGPUAllocator.initialize(8);
 
         HashSet<Device> initialAvailableGPUs = new HashSet<>(customGPUAllocator.getAvailableDevices());
         int numInitialAvailableGPUs = initialAvailableGPUs.size();
@@ -161,7 +163,7 @@ public class TestGPUAllocator {
 
         CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
         CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
-        customGPUAllocator.initialize();
+        customGPUAllocator.initialize(8);
 
         ContainerId firstContainerId = ContainerId.fromString("container_1_1_1_1");
         HashMap<String, HashSet<Device>> firstAllocation = customGPUAllocator.allocate(firstContainerId.toString(), 4);
@@ -169,5 +171,18 @@ public class TestGPUAllocator {
         //Should throw IOException
         ContainerId secondContainerId = ContainerId.fromString("container_1_1_1_2");
         HashMap<String, HashSet<Device>> secondAllocation = customGPUAllocator.allocate(secondContainerId.toString(), 5);
+    }
+
+    //The GPU allocator should never be called when 0 gpus are to be allocated, but further code changes may introduce it
+    @Test
+    public void testZeroGPURequestedZeroGPUAllocated() throws IOException {
+        CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
+        CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
+        customGPUAllocator.initialize(8);
+
+        ContainerId firstContainerId = ContainerId.fromString("container_1_1_1_1");
+        HashMap<String, HashSet<Device>> firstAllocation = customGPUAllocator.allocate(firstContainerId.toString(), 0);
+
+        Assert.assertEquals(8, customGPUAllocator.getAvailableDevices().size());
     }
 }

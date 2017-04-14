@@ -46,7 +46,6 @@ public class NodeManagerMetrics {
   @Metric("Current allocated Virtual Cores")
       MutableGaugeInt allocatedVCores;
   @Metric MutableGaugeInt availableVCores;
-  
   @Metric("Current allocated GPUs")
   MutableGaugeInt allocatedGPUs;
   @Metric MutableGaugeInt availableGPUs;

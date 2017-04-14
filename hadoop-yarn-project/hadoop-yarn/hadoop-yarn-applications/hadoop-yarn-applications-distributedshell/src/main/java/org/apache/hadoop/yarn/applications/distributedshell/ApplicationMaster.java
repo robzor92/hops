@@ -104,12 +104,12 @@ import com.google.common.annotations.VisibleForTesting;
 /**
  * An ApplicationMaster for executing shell commands on a set of launched
  * containers using the YARN framework.
- * 
+ *
  * <p>
  * This class is meant to act as an example on how to write yarn-based
  * application masters.
  * </p>
- * 
+ *
  * <p>
  * The ApplicationMaster is started on a container by the
  * <code>ResourceManager</code>'s launcher. The first thing that the
@@ -121,14 +121,14 @@ import com.google.common.annotations.VisibleForTesting;
  * status/job history if needed. However, in the distributedshell, trackingurl
  * and appMasterHost:appMasterRpcPort are not supported.
  * </p>
- * 
+ *
  * <p>
  * The <code>ApplicationMaster</code> needs to send a heartbeat to the
  * <code>ResourceManager</code> at regular intervals to inform the
  * <code>ResourceManager</code> that it is up and alive. The
  * {@link ApplicationMasterProtocol#allocate} to the <code>ResourceManager</code> from the
  * <code>ApplicationMaster</code> acts as a heartbeat.
- * 
+ *
  * <p>
  * For the actual handling of the job, the <code>ApplicationMaster</code> has to
  * request the <code>ResourceManager</code> via {@link AllocateRequest} for the
@@ -139,7 +139,7 @@ import com.google.common.annotations.VisibleForTesting;
  * <code>ApplicationMaster</code> of the set of newly allocated containers,
  * completed containers as well as current state of available resources.
  * </p>
- * 
+ *
  * <p>
  * For each allocated container, the <code>ApplicationMaster</code> can then set
  * up the necessary launch context via {@link ContainerLaunchContext} to specify
@@ -148,7 +148,7 @@ import com.google.common.annotations.VisibleForTesting;
  * submit a {@link StartContainerRequest} to the {@link ContainerManagementProtocol} to
  * launch and execute the defined commands on the given allocated container.
  * </p>
- * 
+ *
  * <p>
  * The <code>ApplicationMaster</code> can monitor the launched container by
  * either querying the <code>ResourceManager</code> using
@@ -165,9 +165,9 @@ import com.google.common.annotations.VisibleForTesting;
 @InterfaceAudience.Public
 @InterfaceStability.Unstable
 public class ApplicationMaster {
-
+  
   private static final Log LOG = LogFactory.getLog(ApplicationMaster.class);
-
+  
   @VisibleForTesting
   @Private
   public static enum DSEvent {
@@ -179,27 +179,27 @@ public class ApplicationMaster {
   public static enum DSEntity {
     DS_APP_ATTEMPT, DS_CONTAINER
   }
-
+  
   // Configuration
   private Configuration conf;
-
+  
   // Handle to communicate with the Resource Manager
   @SuppressWarnings("rawtypes")
   private AMRMClientAsync amRMClient;
-
+  
   // In both secure and non-secure modes, this points to the job-submitter.
   @VisibleForTesting
   UserGroupInformation appSubmitterUgi;
-
+  
   // Handle to communicate with the Node Manager
   private NMClientAsync nmClientAsync;
   // Listen to process the response from the Node Manager
   private NMCallbackHandler containerListener;
-
+  
   // Application Attempt Id ( combination of attemptId and fail count )
   @VisibleForTesting
   protected ApplicationAttemptId appAttemptID;
-
+  
   // TODO
   // For status update for clients - yet to be implemented
   // Hostname of the container
@@ -208,18 +208,20 @@ public class ApplicationMaster {
   private int appMasterRpcPort = -1;
   // Tracking url to which app master publishes info for clients to monitor
   private String appMasterTrackingUrl = "";
-
+  
   // App Master configuration
   // No. of containers to run shell command on
   @VisibleForTesting
   protected int numTotalContainers = 1;
   // Memory to request for the container on which the shell command will run
-  private int containerMemory = 10;
+  private int containerMemory = 8;
   // VirtualCores to request for the container on which the shell command will run
   private int containerVirtualCores = 1;
+  // GPus to request for the container
+  private int containerGpus = 0;
   // Priority of the request
   private int requestPriority;
-
+  
   // Counter for completed containers ( complete denotes successful or failed )
   private AtomicInteger numCompletedContainers = new AtomicInteger();
   // Allocated container count so that we know how many containers has the RM
@@ -233,14 +235,14 @@ public class ApplicationMaster {
   // Only request for more if the original requirement changes.
   @VisibleForTesting
   protected AtomicInteger numRequestedContainers = new AtomicInteger();
-
+  
   // Shell command to be executed
   private String shellCommand = "";
   // Args to be passed to the shell command
   private String shellArgs = "";
   // Env variables to be setup for the shell command
   private Map<String, String> shellEnv = new HashMap<String, String>();
-
+  
   // Location of shell script ( obtained from info set in env )
   // Shell script path in fs
   private String scriptPath = "";
@@ -248,35 +250,35 @@ public class ApplicationMaster {
   private long shellScriptPathTimestamp = 0;
   // File length needed for local resource
   private long shellScriptPathLen = 0;
-
+  
   // Timeline domain ID
   private String domainId = null;
-
+  
   // Hardcoded path to shell script in launch container's local env
   private static final String ExecShellStringPath = Client.SCRIPT_PATH + ".sh";
   private static final String ExecBatScripStringtPath = Client.SCRIPT_PATH
       + ".bat";
-
+  
   // Hardcoded path to custom log_properties
   private static final String log4jPath = "log4j.properties";
-
+  
   private static final String shellCommandPath = "shellCommands";
   private static final String shellArgsPath = "shellArgs";
-
+  
   private volatile boolean done;
-
+  
   private ByteBuffer allTokens;
-
+  
   // Launch threads
   private List<Thread> launchThreads = new ArrayList<Thread>();
-
+  
   // Timeline Client
   @VisibleForTesting
   TimelineClient timelineClient;
-
+  
   private final String linux_bash_command = "bash";
   private final String windows_command = "cmd /c";
-
+  
   /**
    * @param args Command line args
    */
@@ -304,12 +306,12 @@ public class ApplicationMaster {
       System.exit(2);
     }
   }
-
+  
   /**
    * Dump out contents of $CWD and the environment to stdout for debugging
    */
   private void dumpOutDebugInfo() {
-
+    
     LOG.info("Dump debug output");
     Map<String, String> envs = System.getenv();
     for (Map.Entry<String, String> env : envs.entrySet()) {
@@ -317,11 +319,11 @@ public class ApplicationMaster {
       System.out.println("System env: key=" + env.getKey() + ", val="
           + env.getValue());
     }
-
+    
     BufferedReader buf = null;
     try {
       String lines = Shell.WINDOWS ? Shell.execCommand("cmd", "/c", "dir") :
-        Shell.execCommand("ls", "-al");
+          Shell.execCommand("ls", "-al");
       buf = new BufferedReader(new StringReader(lines));
       String line = "";
       while ((line = buf.readLine()) != null) {
@@ -334,12 +336,12 @@ public class ApplicationMaster {
       IOUtils.cleanup(LOG, buf);
     }
   }
-
+  
   public ApplicationMaster() {
     // Set up the configuration
     conf = new YarnConfiguration();
   }
-
+  
   /**
    * Parse command line options
    *
@@ -358,20 +360,22 @@ public class ApplicationMaster {
         "Amount of memory in MB to be requested to run the shell command");
     opts.addOption("container_vcores", true,
         "Amount of virtual cores to be requested to run the shell command");
+    opts.addOption("container_gpus", true,
+        "Amount of gpus to be requested");
     opts.addOption("num_containers", true,
         "No. of containers on which the shell command needs to be executed");
     opts.addOption("priority", true, "Application Priority. Default 0");
     opts.addOption("debug", false, "Dump out debug information");
-
+    
     opts.addOption("help", false, "Print usage");
     CommandLine cliParser = new GnuParser().parse(opts, args);
-
+    
     if (args.length == 0) {
       printUsage(opts);
       throw new IllegalArgumentException(
           "No args specified for application master to initialize");
     }
-
+    
     //Check whether customer log4j.properties file exists
     if (fileExist(log4jPath)) {
       try {
@@ -381,18 +385,18 @@ public class ApplicationMaster {
         LOG.warn("Can not set up custom log4j properties. " + e);
       }
     }
-
+    
     if (cliParser.hasOption("help")) {
       printUsage(opts);
       return false;
     }
-
+    
     if (cliParser.hasOption("debug")) {
       dumpOutDebugInfo();
     }
-
+    
     Map<String, String> envs = System.getenv();
-
+    
     if (!envs.containsKey(Environment.CONTAINER_ID.name())) {
       if (cliParser.hasOption("app_attempt_id")) {
         String appIdStr = cliParser.getOptionValue("app_attempt_id", "");
@@ -406,7 +410,7 @@ public class ApplicationMaster {
           .get(Environment.CONTAINER_ID.name()));
       appAttemptID = containerId.getApplicationAttemptId();
     }
-
+    
     if (!envs.containsKey(ApplicationConstants.APP_SUBMIT_TIME_ENV)) {
       throw new RuntimeException(ApplicationConstants.APP_SUBMIT_TIME_ENV
           + " not set in the environment");
@@ -423,26 +427,26 @@ public class ApplicationMaster {
       throw new RuntimeException(Environment.NM_PORT.name()
           + " not set in the environment");
     }
-
+    
     LOG.info("Application master for app" + ", appId="
         + appAttemptID.getApplicationId().getId() + ", clustertimestamp="
         + appAttemptID.getApplicationId().getClusterTimestamp()
         + ", attemptId=" + appAttemptID.getAttemptId());
-
+    
     if (!fileExist(shellCommandPath)
         && envs.get(DSConstants.DISTRIBUTEDSHELLSCRIPTLOCATION).isEmpty()) {
       throw new IllegalArgumentException(
           "No shell command or shell script specified to be executed by application master");
     }
-
+    
     if (fileExist(shellCommandPath)) {
       shellCommand = readContent(shellCommandPath);
     }
-
+    
     if (fileExist(shellArgsPath)) {
       shellArgs = readContent(shellArgsPath);
     }
-
+    
     if (cliParser.hasOption("shell_env")) {
       String shellEnvs[] = cliParser.getOptionValues("shell_env");
       for (String env : shellEnvs) {
@@ -460,10 +464,10 @@ public class ApplicationMaster {
         shellEnv.put(key, val);
       }
     }
-
+    
     if (envs.containsKey(DSConstants.DISTRIBUTEDSHELLSCRIPTLOCATION)) {
       scriptPath = envs.get(DSConstants.DISTRIBUTEDSHELLSCRIPTLOCATION);
-
+      
       if (envs.containsKey(DSConstants.DISTRIBUTEDSHELLSCRIPTTIMESTAMP)) {
         shellScriptPathTimestamp = Long.parseLong(envs
             .get(DSConstants.DISTRIBUTEDSHELLSCRIPTTIMESTAMP));
@@ -481,15 +485,17 @@ public class ApplicationMaster {
             "Illegal values in env for shell script path");
       }
     }
-
+    
     if (envs.containsKey(DSConstants.DISTRIBUTEDSHELLTIMELINEDOMAIN)) {
       domainId = envs.get(DSConstants.DISTRIBUTEDSHELLTIMELINEDOMAIN);
     }
-
+    
     containerMemory = Integer.parseInt(cliParser.getOptionValue(
         "container_memory", "10"));
     containerVirtualCores = Integer.parseInt(cliParser.getOptionValue(
         "container_vcores", "1"));
+    containerGpus = Integer.parseInt(cliParser.getOptionValue("container_gpus",
+        "0"));
     numTotalContainers = Integer.parseInt(cliParser.getOptionValue(
         "num_containers", "1"));
     if (numTotalContainers == 0) {
@@ -500,7 +506,7 @@ public class ApplicationMaster {
         .getOptionValue("priority", "0"));
     return true;
   }
-
+  
   /**
    * Helper function to print usage
    *
@@ -509,7 +515,7 @@ public class ApplicationMaster {
   private void printUsage(Options opts) {
     new HelpFormatter().printHelp("ApplicationMaster", opts);
   }
-
+  
   /**
    * Main run function for the application master
    *
@@ -519,7 +525,7 @@ public class ApplicationMaster {
   @SuppressWarnings({ "unchecked" })
   public void run() throws YarnException, IOException, InterruptedException {
     LOG.info("Starting ApplicationMaster");
-
+    
     // Note: Credentials, Token, UserGroupInformation, DataOutputBuffer class
     // are marked as LimitedPrivate
     Credentials credentials =
@@ -537,37 +543,37 @@ public class ApplicationMaster {
       }
     }
     allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
-
+    
     // Create appSubmitterUgi and add original tokens to it
     String appSubmitterUserName =
         System.getenv(ApplicationConstants.Environment.USER.name());
     appSubmitterUgi =
         UserGroupInformation.createRemoteUser(appSubmitterUserName);
     appSubmitterUgi.addCredentials(credentials);
-
-
+    
+    
     AMRMClientAsync.CallbackHandler allocListener = new RMCallbackHandler();
     amRMClient = AMRMClientAsync.createAMRMClientAsync(1000, allocListener);
     amRMClient.init(conf);
     amRMClient.start();
-
+    
     containerListener = createNMCallbackHandler();
     nmClientAsync = new NMClientAsyncImpl(containerListener);
     nmClientAsync.init(conf);
     nmClientAsync.start();
-
+    
     startTimelineClient(conf);
     if(timelineClient != null) {
       publishApplicationAttemptEvent(timelineClient, appAttemptID.toString(),
           DSEvent.DS_APP_ATTEMPT_START, domainId, appSubmitterUgi);
     }
-
+    
     // Setup local RPC Server to accept status requests directly from clients
     // TODO need to setup a protocol for client to be able to communicate to
     // the RPC server
     // TODO use the rpc port info to register with the RM for the client to
     // send requests to this app master
-
+    
     // Register self with ResourceManager
     // This will start heartbeating to the RM
     appMasterHostname = NetUtils.getHostname();
@@ -581,7 +587,10 @@ public class ApplicationMaster {
     
     int maxVCores = response.getMaximumResourceCapability().getVirtualCores();
     LOG.info("Max vcores capabililty of resources in this cluster " + maxVCores);
-
+    
+    int maxGPUs = response.getMaximumResourceCapability().getGPUs();
+    LOG.info("Max gpu capability of resources in this cluster " + maxGPUs);
+    
     // A resource ask cannot exceed the max.
     if (containerMemory > maxMem) {
       LOG.info("Container memory specified above max threshold of cluster."
@@ -589,20 +598,27 @@ public class ApplicationMaster {
           + maxMem);
       containerMemory = maxMem;
     }
-
+    
     if (containerVirtualCores > maxVCores) {
       LOG.info("Container virtual cores specified above max threshold of cluster."
           + " Using max value." + ", specified=" + containerVirtualCores + ", max="
           + maxVCores);
       containerVirtualCores = maxVCores;
     }
-
+    
+    if (containerGpus > maxGPUs) {
+      LOG.info("Container gpus specified above max threshold of cluster."
+          + " Using max value." + ", specified=" + containerGpus + ", max="
+          + maxGPUs);
+      containerGpus = maxGPUs;
+    }
+    
     List<Container> previousAMRunningContainers =
         response.getContainersFromPreviousAttempts();
     LOG.info(appAttemptID + " received " + previousAMRunningContainers.size()
-      + " previous attempts' running containers on AM registration.");
+        + " previous attempts' running containers on AM registration.");
     numAllocatedContainers.addAndGet(previousAMRunningContainers.size());
-
+    
     int numTotalContainersToRequest =
         numTotalContainers - previousAMRunningContainers.size();
     // Setup ask for containers from RM
@@ -617,7 +633,7 @@ public class ApplicationMaster {
     }
     numRequestedContainers.set(numTotalContainers);
   }
-
+  
   @VisibleForTesting
   void startTimelineClient(final Configuration conf)
       throws YarnException, IOException, InterruptedException {
@@ -642,12 +658,12 @@ public class ApplicationMaster {
       throw new YarnException(e.getCause());
     }
   }
-
+  
   @VisibleForTesting
   NMCallbackHandler createNMCallbackHandler() {
     return new NMCallbackHandler(this);
   }
-
+  
   @VisibleForTesting
   protected boolean finish() {
     // wait for completion.
@@ -657,12 +673,12 @@ public class ApplicationMaster {
         Thread.sleep(200);
       } catch (InterruptedException ex) {}
     }
-
+    
     if(timelineClient != null) {
       publishApplicationAttemptEvent(timelineClient, appAttemptID.toString(),
           DSEvent.DS_APP_ATTEMPT_END, domainId, appSubmitterUgi);
     }
-
+    
     // Join all launched threads
     // needed for when we time out
     // and we need to release containers
@@ -674,19 +690,19 @@ public class ApplicationMaster {
         e.printStackTrace();
       }
     }
-
+    
     // When the application completes, it should stop all running containers
     LOG.info("Application completed. Stopping running containers");
     nmClientAsync.stop();
-
+    
     // When the application completes, it should send a finish application
     // signal to the RM
     LOG.info("Application completed. Signalling finish to RM");
-
+    
     FinalApplicationStatus appStatus;
     String appMessage = null;
     boolean success = true;
-    if (numFailedContainers.get() == 0 && 
+    if (numFailedContainers.get() == 0 &&
         numCompletedContainers.get() == numTotalContainers) {
       appStatus = FinalApplicationStatus.SUCCEEDED;
     } else {
@@ -707,12 +723,12 @@ public class ApplicationMaster {
     }
     
     amRMClient.stop();
-
+    
     // Stop Timeline Client
     if(timelineClient != null) {
       timelineClient.stop();
     }
-
+    
     return success;
   }
   
@@ -728,10 +744,10 @@ public class ApplicationMaster {
             + containerStatus.getState() + ", exitStatus="
             + containerStatus.getExitStatus() + ", diagnostics="
             + containerStatus.getDiagnostics());
-
+        
         // non complete containers should not be here
         assert (containerStatus.getState() == ContainerState.COMPLETE);
-
+        
         // increment counters for completed/failed containers
         int exitStatus = containerStatus.getExitStatus();
         if (0 != exitStatus) {
@@ -765,7 +781,7 @@ public class ApplicationMaster {
       // ask for more containers if any failed
       int askCount = numTotalContainers - numRequestedContainers.get();
       numRequestedContainers.addAndGet(askCount);
-
+      
       if (askCount > 0) {
         for (int i = 0; i < askCount; ++i) {
           ContainerRequest containerAsk = setupContainerAskForRM();
@@ -777,7 +793,7 @@ public class ApplicationMaster {
         done = true;
       }
     }
-
+    
     @Override
     public void onContainersAllocated(List<Container> allocatedContainers) {
       LOG.info("Got response from RM for container ask, allocatedCnt="
@@ -792,14 +808,16 @@ public class ApplicationMaster {
             + ", containerResourceMemory"
             + allocatedContainer.getResource().getMemory()
             + ", containerResourceVirtualCores"
-            + allocatedContainer.getResource().getVirtualCores());
+            + allocatedContainer.getResource().getVirtualCores()
+            + ", containerResourceGpuCores"
+            + allocatedContainer.getResource().getGPUs());
         // + ", containerToken"
         // +allocatedContainer.getContainerToken().getIdentifier().toString());
-
+        
         LaunchContainerRunnable runnableLaunchContainer =
             new LaunchContainerRunnable(allocatedContainer, containerListener);
         Thread launchThread = new Thread(runnableLaunchContainer);
-
+        
         // launch and start the container on a separate thread to keep
         // the main thread unblocked
         // as all containers may not be allocated at one go.
@@ -807,15 +825,15 @@ public class ApplicationMaster {
         launchThread.start();
       }
     }
-
+    
     @Override
     public void onShutdownRequest() {
       done = true;
     }
-
+    
     @Override
     public void onNodesUpdated(List<NodeReport> updatedNodes) {}
-
+    
     @Override
     public float getProgress() {
       // set progress to deliver to RM on next heartbeat
@@ -823,30 +841,30 @@ public class ApplicationMaster {
           / numTotalContainers;
       return progress;
     }
-
+    
     @Override
     public void onError(Throwable e) {
       done = true;
       amRMClient.stop();
     }
   }
-
+  
   @VisibleForTesting
   static class NMCallbackHandler
-    implements NMClientAsync.CallbackHandler {
-
+      implements NMClientAsync.CallbackHandler {
+    
     private ConcurrentMap<ContainerId, Container> containers =
         new ConcurrentHashMap<ContainerId, Container>();
     private final ApplicationMaster applicationMaster;
-
+    
     public NMCallbackHandler(ApplicationMaster applicationMaster) {
       this.applicationMaster = applicationMaster;
     }
-
+    
     public void addContainer(ContainerId containerId, Container container) {
       containers.putIfAbsent(containerId, container);
     }
-
+    
     @Override
     public void onContainerStopped(ContainerId containerId) {
       if (LOG.isDebugEnabled()) {
@@ -854,7 +872,7 @@ public class ApplicationMaster {
       }
       containers.remove(containerId);
     }
-
+    
     @Override
     public void onContainerStatusReceived(ContainerId containerId,
         ContainerStatus containerStatus) {
@@ -863,7 +881,7 @@ public class ApplicationMaster {
             containerStatus);
       }
     }
-
+    
     @Override
     public void onContainerStarted(ContainerId containerId,
         Map<String, ByteBuffer> allServiceResponse) {
@@ -880,7 +898,7 @@ public class ApplicationMaster {
             applicationMaster.domainId, applicationMaster.appSubmitterUgi);
       }
     }
-
+    
     @Override
     public void onStartContainerError(ContainerId containerId, Throwable t) {
       LOG.error("Failed to start Container " + containerId);
@@ -888,31 +906,31 @@ public class ApplicationMaster {
       applicationMaster.numCompletedContainers.incrementAndGet();
       applicationMaster.numFailedContainers.incrementAndGet();
     }
-
+    
     @Override
     public void onGetContainerStatusError(
         ContainerId containerId, Throwable t) {
       LOG.error("Failed to query the status of Container " + containerId);
     }
-
+    
     @Override
     public void onStopContainerError(ContainerId containerId, Throwable t) {
       LOG.error("Failed to stop Container " + containerId);
       containers.remove(containerId);
     }
   }
-
+  
   /**
    * Thread to connect to the {@link ContainerManagementProtocol} and launch the container
    * that will execute the shell command.
    */
   private class LaunchContainerRunnable implements Runnable {
-
+    
     // Allocated container
     Container container;
-
+    
     NMCallbackHandler containerListener;
-
+    
     /**
      * @param lcontainer Allocated container
      * @param containerListener Callback handler of the container
@@ -922,7 +940,7 @@ public class ApplicationMaster {
       this.container = lcontainer;
       this.containerListener = containerListener;
     }
-
+    
     @Override
     /**
      * Connects to CM, sets up container launch context 
@@ -932,10 +950,10 @@ public class ApplicationMaster {
     public void run() {
       LOG.info("Setting up container launch container for containerid="
           + container.getId());
-
+      
       // Set the local resources
       Map<String, LocalResource> localResources = new HashMap<String, LocalResource>();
-
+      
       // The container for the eventual shell commands needs its own local
       // resources too.
       // In this scenario, if a shell script is specified, we need to have it
@@ -947,7 +965,7 @@ public class ApplicationMaster {
         } else {
           renamedScriptPath = new Path(scriptPath + ".sh");
         }
-
+        
         try {
           // rename the script file based on the underlying OS syntax.
           renameScriptFile(renamedScriptPath);
@@ -961,11 +979,11 @@ public class ApplicationMaster {
           numFailedContainers.incrementAndGet();
           return;
         }
-
+        
         URL yarnUrl = null;
         try {
           yarnUrl = ConverterUtils.getYarnUrlFromURI(
-            new URI(renamedScriptPath.toString()));
+              new URI(renamedScriptPath.toString()));
         } catch (URISyntaxException e) {
           LOG.error("Error when trying to use shell script path specified"
               + " in env, path=" + renamedScriptPath, e);
@@ -978,16 +996,16 @@ public class ApplicationMaster {
           return;
         }
         LocalResource shellRsrc = LocalResource.newInstance(yarnUrl,
-          LocalResourceType.FILE, LocalResourceVisibility.APPLICATION,
-          shellScriptPathLen, shellScriptPathTimestamp);
+            LocalResourceType.FILE, LocalResourceVisibility.APPLICATION,
+            shellScriptPathLen, shellScriptPathTimestamp);
         localResources.put(Shell.WINDOWS ? ExecBatScripStringtPath :
             ExecShellStringPath, shellRsrc);
         shellCommand = Shell.WINDOWS ? windows_command : linux_bash_command;
       }
-
+      
       // Set the necessary command to execute on the allocated container
       Vector<CharSequence> vargs = new Vector<CharSequence>(5);
-
+      
       // Set executable command
       vargs.add(shellCommand);
       // Set shell script path
@@ -995,25 +1013,25 @@ public class ApplicationMaster {
         vargs.add(Shell.WINDOWS ? ExecBatScripStringtPath
             : ExecShellStringPath);
       }
-
+      
       // Set args for the shell command if any
       vargs.add(shellArgs);
       // Add log redirect params
       vargs.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout");
       vargs.add("2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr");
-
+      
       // Get final commmand
       StringBuilder command = new StringBuilder();
       for (CharSequence str : vargs) {
         command.append(str).append(" ");
       }
-
+      
       List<String> commands = new ArrayList<String>();
       commands.add(command.toString());
-
+      
       // Set up ContainerLaunchContext, setting local resource, environment,
       // command and token for constructor.
-
+      
       // Note for tokens: Set up tokens for the container too. Today, for normal
       // shell commands, the container in distribute-shell doesn't need any
       // tokens. We are populating them mainly for NodeManagers to be able to
@@ -1021,12 +1039,12 @@ public class ApplicationMaster {
       // otherwise also useful in cases, for e.g., when one is running a
       // "hadoop dfs" command inside the distributed shell.
       ContainerLaunchContext ctx = ContainerLaunchContext.newInstance(
-        localResources, shellEnv, commands, null, allTokens.duplicate(), null);
+          localResources, shellEnv, commands, null, allTokens.duplicate(), null);
       containerListener.addContainer(container.getId(), container);
       nmClientAsync.startContainerAsync(container, ctx);
     }
   }
-
+  
   private void renameScriptFile(final Path renamedScriptPath)
       throws IOException, InterruptedException {
     appSubmitterUgi.doAs(new PrivilegedExceptionAction<Void>() {
@@ -1040,7 +1058,7 @@ public class ApplicationMaster {
     LOG.info("User " + appSubmitterUgi.getUserName()
         + " added suffix(.sh/.bat) to script file as " + renamedScriptPath);
   }
-
+  
   /**
    * Setup the request that will be sent to the RM for the container ask.
    *
@@ -1052,22 +1070,22 @@ public class ApplicationMaster {
     // set the priority for the request
     // TODO - what is the range for priority? how to decide?
     Priority pri = Priority.newInstance(requestPriority);
-
+    
     // Set up resource type requirements
     // For now, memory and CPU are supported so we set memory and cpu requirements
     Resource capability = Resource.newInstance(containerMemory,
-      containerVirtualCores);
-
+        containerVirtualCores, containerGpus);
+    
     ContainerRequest request = new ContainerRequest(capability, null, null,
         pri);
     LOG.info("Requested container ask: " + request.toString());
     return request;
   }
-
+  
   private boolean fileExist(String filePath) {
     return new File(filePath).exists();
   }
-
+  
   private String readContent(String filePath) throws IOException {
     DataInputStream ds = null;
     try {
@@ -1092,7 +1110,7 @@ public class ApplicationMaster {
     event.addEventInfo("Node", container.getNodeId().toString());
     event.addEventInfo("Resources", container.getResource().toString());
     entity.addEvent(event);
-
+    
     try {
       ugi.doAs(new PrivilegedExceptionAction<TimelinePutResponse>() {
         @Override
@@ -1102,11 +1120,11 @@ public class ApplicationMaster {
       });
     } catch (Exception e) {
       LOG.error("Container start event could not be published for "
-          + container.getId().toString(),
+              + container.getId().toString(),
           e instanceof UndeclaredThrowableException ? e.getCause() : e);
     }
   }
-
+  
   private static void publishContainerEndEvent(
       final TimelineClient timelineClient, ContainerStatus container,
       String domainId, UserGroupInformation ugi) {
@@ -1128,7 +1146,7 @@ public class ApplicationMaster {
           + container.getContainerId().toString(), e);
     }
   }
-
+  
   private static void publishApplicationAttemptEvent(
       final TimelineClient timelineClient, String appAttemptId,
       DSEvent appEvent, String domainId, UserGroupInformation ugi) {

@@ -60,30 +60,30 @@ import org.apache.hadoop.yarn.util.timeline.TimelineUtils;
 @Private
 @Unstable
 public class SystemMetricsPublisher extends CompositeService {
-
+  
   private static final Log LOG = LogFactory
       .getLog(SystemMetricsPublisher.class);
-
+  
   private Dispatcher dispatcher;
   private TimelineClient client;
   private boolean publishSystemMetrics;
-
+  
   public SystemMetricsPublisher() {
     super(SystemMetricsPublisher.class.getName());
   }
-
+  
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
     publishSystemMetrics =
         conf.getBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED,
             YarnConfiguration.DEFAULT_TIMELINE_SERVICE_ENABLED) &&
-        conf.getBoolean(YarnConfiguration.RM_SYSTEM_METRICS_PUBLISHER_ENABLED,
-            YarnConfiguration.DEFAULT_RM_SYSTEM_METRICS_PUBLISHER_ENABLED);
-
+            conf.getBoolean(YarnConfiguration.RM_SYSTEM_METRICS_PUBLISHER_ENABLED,
+                YarnConfiguration.DEFAULT_RM_SYSTEM_METRICS_PUBLISHER_ENABLED);
+    
     if (publishSystemMetrics) {
       client = TimelineClient.createTimelineClient();
       addIfService(client);
-
+      
       dispatcher = createDispatcher(conf);
       dispatcher.register(SystemMetricsEventType.class,
           new ForwardingEventHandler());
@@ -94,7 +94,7 @@ public class SystemMetricsPublisher extends CompositeService {
     }
     super.serviceInit(conf);
   }
-
+  
   @SuppressWarnings("unchecked")
   public void appCreated(RMApp app, long createdTime) {
     if (publishSystemMetrics) {
@@ -109,7 +109,7 @@ public class SystemMetricsPublisher extends CompositeService {
               createdTime));
     }
   }
-
+  
   @SuppressWarnings("unchecked")
   public void appFinished(RMApp app, RMAppState state, long finishedTime) {
     if (publishSystemMetrics) {
@@ -125,7 +125,7 @@ public class SystemMetricsPublisher extends CompositeService {
               app.getRMAppMetrics()));
     }
   }
-
+  
   @SuppressWarnings("unchecked")
   public void appACLsUpdated(RMApp app, String appViewACLs,
       long updatedTime) {
@@ -137,7 +137,7 @@ public class SystemMetricsPublisher extends CompositeService {
               updatedTime));
     }
   }
-
+  
   @SuppressWarnings("unchecked")
   public void appAttemptRegistered(RMAppAttempt appAttempt,
       long registeredTime) {
@@ -155,7 +155,7 @@ public class SystemMetricsPublisher extends CompositeService {
               registeredTime));
     }
   }
-
+  
   @SuppressWarnings("unchecked")
   public void appAttemptFinished(RMAppAttempt appAttempt,
       RMAppAttemptState appAttemtpState, RMApp app, long finishedTime) {
@@ -176,7 +176,7 @@ public class SystemMetricsPublisher extends CompositeService {
               container));
     }
   }
-
+  
   @SuppressWarnings("unchecked")
   public void containerCreated(RMContainer container, long createdTime) {
     if (publishSystemMetrics) {
@@ -189,7 +189,7 @@ public class SystemMetricsPublisher extends CompositeService {
               createdTime, container.getNodeHttpAddress()));
     }
   }
-
+  
   @SuppressWarnings("unchecked")
   public void containerFinished(RMContainer container, long finishedTime) {
     if (publishSystemMetrics) {
@@ -202,7 +202,7 @@ public class SystemMetricsPublisher extends CompositeService {
               finishedTime, container.getAllocatedNode()));
     }
   }
-
+  
   protected Dispatcher createDispatcher(Configuration conf) {
     MultiThreadedDispatcher dispatcher =
         new MultiThreadedDispatcher(
@@ -212,7 +212,7 @@ public class SystemMetricsPublisher extends CompositeService {
     dispatcher.setDrainEventsOnStop();
     return dispatcher;
   }
-
+  
   protected void handleSystemMetricsEvent(
       SystemMetricsEvent event) {
     switch (event.getType()) {
@@ -241,7 +241,7 @@ public class SystemMetricsPublisher extends CompositeService {
         LOG.error("Unknown SystemMetricsEvent type: " + event.getType());
     }
   }
-
+  
   private void publishApplicationCreatedEvent(ApplicationCreatedEvent event) {
     TimelineEntity entity =
         createApplicationEntity(event.getApplicationId());
@@ -264,7 +264,7 @@ public class SystemMetricsPublisher extends CompositeService {
     entity.addEvent(tEvent);
     putEntity(entity);
   }
-
+  
   private void publishApplicationFinishedEvent(ApplicationFinishedEvent event) {
     TimelineEntity entity =
         createApplicationEntity(event.getApplicationId());
@@ -288,12 +288,14 @@ public class SystemMetricsPublisher extends CompositeService {
         appMetrics.getVcoreSeconds());
     entity.addOtherInfo(ApplicationMetricsConstants.APP_MEM_METRICS,
         appMetrics.getMemorySeconds());
+    entity.addOtherInfo(ApplicationMetricsConstants.APP_GPU_METRICS,
+        appMetrics.getGPUSeconds());
     
     tEvent.setEventInfo(eventInfo);
     entity.addEvent(tEvent);
     putEntity(entity);
   }
-
+  
   private void publishApplicationACLsUpdatedEvent(
       ApplicationACLsUpdatedEvent event) {
     TimelineEntity entity =
@@ -309,7 +311,7 @@ public class SystemMetricsPublisher extends CompositeService {
     entity.addEvent(tEvent);
     putEntity(entity);
   }
-
+  
   private static TimelineEntity createApplicationEntity(
       ApplicationId applicationId) {
     TimelineEntity entity = new TimelineEntity();
@@ -317,9 +319,9 @@ public class SystemMetricsPublisher extends CompositeService {
     entity.setEntityId(applicationId.toString());
     return entity;
   }
-
+  
   private void
-      publishAppAttemptRegisteredEvent(AppAttemptRegisteredEvent event) {
+  publishAppAttemptRegisteredEvent(AppAttemptRegisteredEvent event) {
     TimelineEntity entity =
         createAppAttemptEntity(event.getApplicationAttemptId());
     TimelineEvent tEvent = new TimelineEvent();
@@ -345,7 +347,7 @@ public class SystemMetricsPublisher extends CompositeService {
     entity.addEvent(tEvent);
     putEntity(entity);
   }
-
+  
   private void publishAppAttemptFinishedEvent(AppAttemptFinishedEvent event) {
     TimelineEntity entity =
         createAppAttemptEntity(event.getApplicationAttemptId());
@@ -373,7 +375,7 @@ public class SystemMetricsPublisher extends CompositeService {
     entity.addEvent(tEvent);
     putEntity(entity);
   }
-
+  
   private static TimelineEntity createAppAttemptEntity(
       ApplicationAttemptId appAttemptId) {
     TimelineEntity entity = new TimelineEntity();
@@ -384,7 +386,7 @@ public class SystemMetricsPublisher extends CompositeService {
         appAttemptId.getApplicationId().toString());
     return entity;
   }
-
+  
   private void publishContainerCreatedEvent(ContainerCreatedEvent event) {
     TimelineEntity entity = createContainerEntity(event.getContainerId());
     Map<String, Object> entityInfo = new HashMap<String, Object>();
@@ -392,6 +394,8 @@ public class SystemMetricsPublisher extends CompositeService {
         event.getAllocatedResource().getMemory());
     entityInfo.put(ContainerMetricsConstants.ALLOCATED_VCORE_ENTITY_INFO,
         event.getAllocatedResource().getVirtualCores());
+    entityInfo.put(ContainerMetricsConstants.ALLOCATED_GPU_ENTITY_INFO,
+        event.getAllocatedResource().getGPUs());
     entityInfo.put(ContainerMetricsConstants.ALLOCATED_HOST_ENTITY_INFO,
         event.getAllocatedNode().getHost());
     entityInfo.put(ContainerMetricsConstants.ALLOCATED_PORT_ENTITY_INFO,
@@ -399,8 +403,8 @@ public class SystemMetricsPublisher extends CompositeService {
     entityInfo.put(ContainerMetricsConstants.ALLOCATED_PRIORITY_ENTITY_INFO,
         event.getAllocatedPriority().getPriority());
     entityInfo.put(
-      ContainerMetricsConstants.ALLOCATED_HOST_HTTP_ADDRESS_ENTITY_INFO,
-      event.getNodeHttpAddress());
+        ContainerMetricsConstants.ALLOCATED_HOST_HTTP_ADDRESS_ENTITY_INFO,
+        event.getNodeHttpAddress());
     entity.setOtherInfo(entityInfo);
     TimelineEvent tEvent = new TimelineEvent();
     tEvent.setEventType(ContainerMetricsConstants.CREATED_EVENT_TYPE);
@@ -408,7 +412,7 @@ public class SystemMetricsPublisher extends CompositeService {
     entity.addEvent(tEvent);
     putEntity(entity);
   }
-
+  
   private void publishContainerFinishedEvent(ContainerFinishedEvent event) {
     TimelineEntity entity = createContainerEntity(event.getContainerId());
     TimelineEvent tEvent = new TimelineEvent();
@@ -431,7 +435,7 @@ public class SystemMetricsPublisher extends CompositeService {
     entity.addEvent(tEvent);
     putEntity(entity);
   }
-
+  
   private static TimelineEntity createContainerEntity(
       ContainerId containerId) {
     TimelineEntity entity = new TimelineEntity();
@@ -442,7 +446,7 @@ public class SystemMetricsPublisher extends CompositeService {
         containerId.getApplicationAttemptId().toString());
     return entity;
   }
-
+  
   private void putEntity(TimelineEntity entity) {
     try {
       if (LOG.isDebugEnabled()) {
@@ -455,7 +459,7 @@ public class SystemMetricsPublisher extends CompositeService {
           + entity.getEntityId() + "]", e);
     }
   }
-
+  
   /**
    * EventHandler implementation which forward events to SystemMetricsPublisher.
    * Making use of it, SystemMetricsPublisher can avoid to have a public handle
@@ -463,21 +467,21 @@ public class SystemMetricsPublisher extends CompositeService {
    */
   private final class ForwardingEventHandler implements
       EventHandler<SystemMetricsEvent> {
-
+    
     @Override
     public void handle(SystemMetricsEvent event) {
       handleSystemMetricsEvent(event);
     }
-
+    
   }
-
+  
   @SuppressWarnings({ "rawtypes", "unchecked" })
   protected static class MultiThreadedDispatcher extends CompositeService
       implements Dispatcher {
-
+    
     private List<AsyncDispatcher> dispatchers =
         new ArrayList<AsyncDispatcher>();
-
+    
     public MultiThreadedDispatcher(int num) {
       super(MultiThreadedDispatcher.class.getName());
       for (int i = 0; i < num; ++i) {
@@ -486,27 +490,27 @@ public class SystemMetricsPublisher extends CompositeService {
         addIfService(dispatcher);
       }
     }
-
+    
     @Override
     public EventHandler getEventHandler() {
       return new CompositEventHandler();
     }
-
+    
     @Override
     public void register(Class<? extends Enum> eventType, EventHandler handler) {
       for (AsyncDispatcher dispatcher : dispatchers) {
         dispatcher.register(eventType, handler);
       }
     }
-
+    
     public void setDrainEventsOnStop() {
       for (AsyncDispatcher dispatcher : dispatchers) {
         dispatcher.setDrainEventsOnStop();
       }
     }
-
+    
     private class CompositEventHandler implements EventHandler<Event> {
-
+      
       @Override
       public void handle(Event event) {
         // Use hashCode (of ApplicationId) to dispatch the event to the child
@@ -516,13 +520,13 @@ public class SystemMetricsPublisher extends CompositeService {
         int index = (event.hashCode() & Integer.MAX_VALUE) % dispatchers.size();
         dispatchers.get(index).getEventHandler().handle(event);
       }
-
+      
     }
-
+    
     protected AsyncDispatcher createDispatcher() {
       return new AsyncDispatcher();
     }
-
+    
   }
-
+  
 }

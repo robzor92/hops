@@ -23,6 +23,7 @@ import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ResourceCalculatorPlugin;
+import org.mortbay.log.Log;
 
 @InterfaceAudience.Private
 @InterfaceStability.Unstable
@@ -91,7 +92,14 @@ public class NodeManagerHardwareUtils {
   
   public static int getNodeGPUs(ResourceCalculatorPlugin plugin,
       Configuration conf) {
-    return plugin.getNumGPUs();
+    int discoveredGPUs = plugin.getNumGPUs();
+    int configuredGPUs = Math.min(conf.getInt(YarnConfiguration.NM_GPUS,
+        YarnConfiguration.DEFAULT_NM_GPUS), discoveredGPUs);
+    if(configuredGPUs > discoveredGPUs) {
+      Log.info("Could not find " + configuredGPUs + " gpus as configured." +
+          " Only discovered " + discoveredGPUs + " gpus" );
+    }
+    return configuredGPUs;
   }
   
   public static int getNodeGPUs(Configuration conf) {

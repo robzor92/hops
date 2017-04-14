@@ -44,9 +44,8 @@ public class TestLinuxResourceCalculatorPlugin {
 	  public FakeLinuxResourceCalculatorPlugin(String procfsMemFile,
 			                                       String procfsCpuFile,
 			                                       String procfsStatFile,
-			                                       long jiffyLengthInMillis,
-                                                   String devDir) {
-	    super(procfsMemFile, procfsCpuFile, procfsStatFile, jiffyLengthInMillis, devDir);
+			                                       long jiffyLengthInMillis) {
+	    super(procfsMemFile, procfsCpuFile, procfsStatFile, jiffyLengthInMillis);
 	  }
 	  @Override
 	  long getCurrentTime() {
@@ -63,16 +62,13 @@ public class TestLinuxResourceCalculatorPlugin {
   private static final String FAKE_CPUFILE;
   private static final String FAKE_STATFILE;
   private static final long FAKE_JIFFY_LENGTH = 10L;
-  private static final String FAKE_DEV_DIR;
   static {
     int randomNum = (new Random()).nextInt(1000000000);
     FAKE_MEMFILE = TEST_ROOT_DIR + File.separator + "MEMINFO_" + randomNum;
     FAKE_CPUFILE = TEST_ROOT_DIR + File.separator + "CPUINFO_" + randomNum;
     FAKE_STATFILE = TEST_ROOT_DIR + File.separator + "STATINFO_" + randomNum;
-    FAKE_DEV_DIR = TEST_ROOT_DIR + File.separator + "dev";
     plugin = new FakeLinuxResourceCalculatorPlugin(FAKE_MEMFILE, FAKE_CPUFILE,
-                                                   FAKE_STATFILE, FAKE_JIFFY_LENGTH,
-                                                   FAKE_DEV_DIR);
+                                                   FAKE_STATFILE, FAKE_JIFFY_LENGTH);
   }
   static final String MEMINFO_FORMAT = 
 	  "MemTotal:      %d kB\n" +
@@ -239,22 +235,5 @@ public class TestLinuxResourceCalculatorPlugin {
                  1024L * (memFree + inactive + swapFree));
     assertEquals(plugin.getPhysicalMemorySize(), 1024L * memTotal);
     assertEquals(plugin.getVirtualMemorySize(), 1024L * (memTotal + swapTotal));
-  }
-
-
-  @Test
-  public void testDetectNvidiaGPUs() throws IOException {
-      File deviceDir = new File(FAKE_DEV_DIR);
-      deviceDir.deleteOnExit();
-      deviceDir.mkdir();
-      Assert.assertTrue(deviceDir.isDirectory());
-
-      for(String devFile : NVIDIA_DEVICE_FILES) {
-          File nvidiaGPUFile = new File(deviceDir, devFile);
-          nvidiaGPUFile.createNewFile();
-          Assert.assertTrue(nvidiaGPUFile.exists());
-      }
-
-      assertEquals(NVIDIA_DEVICE_FILES.length, plugin.getNumGPUs());
   }
 }

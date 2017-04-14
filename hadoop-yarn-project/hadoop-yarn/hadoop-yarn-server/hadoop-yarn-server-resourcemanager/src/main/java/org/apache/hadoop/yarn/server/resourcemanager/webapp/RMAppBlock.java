@@ -47,24 +47,24 @@ import java.util.Collection;
 import java.util.Set;
 
 public class RMAppBlock extends AppBlock{
-
+  
   private static final Log LOG = LogFactory.getLog(RMAppBlock.class);
   private final ResourceManager rm;
   private final Configuration conf;
-
-
+  
+  
   @Inject
   RMAppBlock(ViewContext ctx, Configuration conf, ResourceManager rm) {
     super(rm.getClientRMService(), ctx, conf);
     this.conf = conf;
     this.rm = rm;
   }
-
+  
   @Override
   protected void render(Block html) {
     super.render(html);
   }
-
+  
   @Override
   protected void createApplicationMetricsTable(Block html){
     RMApp rmApp = this.rm.getRMContext().getRMApps().get(appID);
@@ -80,34 +80,35 @@ public class RMAppBlock extends AppBlock{
     }
     Resource attemptResourcePreempted =
         attemptMetrics == null ? Resources.none() : attemptMetrics
-          .getResourcePreempted();
+            .getResourcePreempted();
     int attemptNumNonAMContainerPreempted =
         attemptMetrics == null ? 0 : attemptMetrics
-          .getNumNonAMContainersPreempted();
+            .getNumNonAMContainersPreempted();
     DIV<Hamlet> pdiv = html.
         _(InfoBlock.class).
         div(_INFO_WRAP);
     info("Application Overview").clear();
     info("Application Metrics")
         ._("Total Resource Preempted:",
-          appMetrics == null ? "N/A" : appMetrics.getResourcePreempted())
+            appMetrics == null ? "N/A" : appMetrics.getResourcePreempted())
         ._("Total Number of Non-AM Containers Preempted:",
-          appMetrics == null ? "N/A"
-              : appMetrics.getNumNonAMContainersPreempted())
+            appMetrics == null ? "N/A"
+                : appMetrics.getNumNonAMContainersPreempted())
         ._("Total Number of AM Containers Preempted:",
-          appMetrics == null ? "N/A"
-              : appMetrics.getNumAMContainersPreempted())
+            appMetrics == null ? "N/A"
+                : appMetrics.getNumAMContainersPreempted())
         ._("Resource Preempted from Current Attempt:",
-          attemptResourcePreempted)
+            attemptResourcePreempted)
         ._("Number of Non-AM Containers Preempted from Current Attempt:",
-          attemptNumNonAMContainerPreempted)
+            attemptNumNonAMContainerPreempted)
         ._("Aggregate Resource Allocation:",
-          String.format("%d MB-seconds, %d vcore-seconds",
-              appMetrics == null ? "N/A" : appMetrics.getMemorySeconds(),
-              appMetrics == null ? "N/A" : appMetrics.getVcoreSeconds()));
+            String.format("%d MB-seconds, %d vcore-seconds, %d gpu-seconds",
+                appMetrics == null ? "N/A" : appMetrics.getMemorySeconds(),
+                appMetrics == null ? "N/A" : appMetrics.getVcoreSeconds(),
+                appMetrics == null ? "N/A" : appMetrics.getGPUSeconds()));
     pdiv._();
   }
-
+  
   @Override
   protected void generateApplicationTable(Block html,
       UserGroupInformation callerUGI,
@@ -117,7 +118,7 @@ public class RMAppBlock extends AppBlock{
         html.table("#attempts").thead().tr().th(".id", "Attempt ID")
             .th(".started", "Started").th(".node", "Node").th(".logs", "Logs")
             .th(".blacklistednodes", "Blacklisted Nodes")._()._().tbody();
-
+    
     RMApp rmApp = this.rm.getRMContext().getRMApps().get(this.appID);
     if (rmApp == null) {
       return;
@@ -135,7 +136,7 @@ public class RMAppBlock extends AppBlock{
       String blacklistedNodesCount = "N/A";
       Set<String> nodes =
           RMAppAttemptBlock.getBlacklistedNodes(rm,
-            rmAppAttempt.getAppAttemptId());
+              rmAppAttempt.getAppAttemptId());
       if(nodes != null) {
         blacklistedNodesCount = String.valueOf(nodes.size());
       }
@@ -168,7 +169,7 @@ public class RMAppBlock extends AppBlock{
     attemptsTableData.append("]");
     html.script().$type("text/javascript")
         ._("var attemptsTableData=" + attemptsTableData)._();
-
+    
     tbody._()._();
   }
 }

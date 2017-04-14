@@ -40,9 +40,9 @@ import org.junit.After;
 import org.junit.Test;
 
 public class TestSchedulerApplicationAttempt {
-
+  
   private static final NodeId nodeId = NodeId.newInstance("somehost", 5);
-
+  
   private Configuration conf = new Configuration();
   
   @After
@@ -60,7 +60,7 @@ public class TestSchedulerApplicationAttempt {
     QueueMetrics parentMetrics = parentQueue.getMetrics();
     QueueMetrics oldMetrics = oldQueue.getMetrics();
     QueueMetrics newMetrics = newQueue.getMetrics();
-
+    
     ApplicationAttemptId appAttId = createAppAttemptId(0, 0);
     RMContext rmContext = mock(RMContext.class);
     when(rmContext.getEpoch()).thenReturn(3L);
@@ -72,12 +72,12 @@ public class TestSchedulerApplicationAttempt {
     assertEquals(0x30000000001L, app.getNewContainerId());
     
     // Resource request
-    Resource requestedResource = Resource.newInstance(1536, 2);
+    Resource requestedResource = Resource.newInstance(1536, 2, 2);
     Priority requestedPriority = Priority.newInstance(2);
     ResourceRequest request = ResourceRequest.newInstance(requestedPriority,
         ResourceRequest.ANY, requestedResource, 3);
     app.updateResourceRequests(Arrays.asList(request));
-
+    
     // Allocated container
     RMContainer container1 = createRMContainer(appAttId, 1, requestedResource);
     app.liveContainers.put(container1.getContainerId(), container1);
@@ -87,7 +87,7 @@ public class TestSchedulerApplicationAttempt {
     
     // Reserved container
     Priority prio1 = Priority.newInstance(1);
-    Resource reservedResource = Resource.newInstance(2048, 3);
+    Resource reservedResource = Resource.newInstance(2048, 3, 3);
     RMContainer container2 = createReservedRMContainer(appAttId, 1, reservedResource,
         node.getNodeID(), prio1);
     Map<NodeId, RMContainer> reservations = new HashMap<NodeId, RMContainer>();
@@ -95,28 +95,31 @@ public class TestSchedulerApplicationAttempt {
     app.reservedContainers.put(prio1, reservations);
     oldMetrics.reserveResource(user, reservedResource);
     
-    checkQueueMetrics(oldMetrics, 1, 1, 1536, 2, 2048, 3, 3072, 4);
-    checkQueueMetrics(newMetrics, 0, 0, 0, 0, 0, 0, 0, 0);
-    checkQueueMetrics(parentMetrics, 1, 1, 1536, 2, 2048, 3, 3072, 4);
+    checkQueueMetrics(oldMetrics, 1, 1, 1536, 2, 2, 2048, 3, 3, 3072, 4, 4);
+    checkQueueMetrics(newMetrics, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    checkQueueMetrics(parentMetrics, 1, 1, 1536, 2, 2, 2048, 3, 3, 3072, 4, 4);
     
     app.move(newQueue);
     
-    checkQueueMetrics(oldMetrics, 0, 0, 0, 0, 0, 0, 0, 0);
-    checkQueueMetrics(newMetrics, 1, 1, 1536, 2, 2048, 3, 3072, 4);
-    checkQueueMetrics(parentMetrics, 1, 1, 1536, 2, 2048, 3, 3072, 4);
+    checkQueueMetrics(oldMetrics, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    checkQueueMetrics(newMetrics, 1, 1, 1536, 2, 2, 2048, 3, 3, 3072, 4, 4);
+    checkQueueMetrics(parentMetrics, 1, 1, 1536, 2, 2, 2048, 3, 3, 3072, 4, 4);
   }
   
   private void checkQueueMetrics(QueueMetrics metrics, int activeApps,
-      int runningApps, int allocMb, int allocVcores, int reservedMb,
-      int reservedVcores, int pendingMb, int pendingVcores) {
+     int runningApps, int allocMb, int allocVcores, int allocGcores, int reservedMb,
+     int reservedVcores, int reservedGcores, int pendingMb, int pendingVcores, int pendingGcores) {
     assertEquals(activeApps, metrics.getActiveApps());
     assertEquals(runningApps, metrics.getAppsRunning());
     assertEquals(allocMb, metrics.getAllocatedMB());
     assertEquals(allocVcores, metrics.getAllocatedVirtualCores());
+    assertEquals(allocGcores, metrics.getAllocatedGpus());
     assertEquals(reservedMb, metrics.getReservedMB());
     assertEquals(reservedVcores, metrics.getReservedVirtualCores());
+    assertEquals(reservedGcores, metrics.getReservedGpus());
     assertEquals(pendingMb, metrics.getPendingMB());
     assertEquals(pendingVcores, metrics.getPendingVirtualCores());
+    assertEquals(pendingGcores, metrics.getPendingGpus());
   }
   
   private SchedulerNode createNode() {
@@ -163,7 +166,7 @@ public class TestSchedulerApplicationAttempt {
         ApplicationAttemptId.newInstance(appIdImpl, attemptId);
     return attId;
   }
-
+  
   @Test
   public void testSchedulingOpportunityOverflow() throws Exception {
     ApplicationAttemptId attemptId = createAppAttemptId(0, 0);

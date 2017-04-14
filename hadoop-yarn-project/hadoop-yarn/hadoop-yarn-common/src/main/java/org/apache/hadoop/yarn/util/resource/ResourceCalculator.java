@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.hadoop.yarn.util.resource;
 
 import org.apache.hadoop.classification.InterfaceAudience.Private;
@@ -27,8 +27,8 @@ import org.apache.hadoop.yarn.api.records.Resource;
 @Private
 @Unstable
 public abstract class ResourceCalculator {
-
-  public abstract int 
+  
+  public abstract int
   compare(Resource clusterResource, Resource lhs, Resource rhs);
   
   public static int divideAndCeil(int a, int b) {
@@ -37,30 +37,43 @@ public abstract class ResourceCalculator {
     }
     return (a + (b - 1)) / b;
   }
-
+  
   public static int roundUp(int a, int b) {
     return divideAndCeil(a, b) * b;
   }
-
+  
   public static int roundDown(int a, int b) {
     return (a / b) * b;
   }
-
+  
+  public static int roundUpWithZero(int a, int b) {
+    if (b == 0) {
+      return a;
+    }
+    return ((a + (b - 1)) / b) * b;
+  }
+  
+  public static int roundDownWithZero(int a, int b) {
+    if (b==0) {
+      return a;
+    }    return roundDown(a, b);
+  }
+  
   /**
    * Compute the number of containers which can be allocated given
    * <code>available</code> and <code>required</code> resources.
-   * 
+   *
    * @param available available resources
    * @param required required resources
    * @return number of containers which can be allocated
    */
   public abstract int computeAvailableContainers(
       Resource available, Resource required);
-
+  
   /**
    * Multiply resource <code>r</code> by factor <code>by</code> 
    * and normalize up using step-factor <code>stepFactor</code>.
-   * 
+   *
    * @param r resource to be multiplied
    * @param by multiplier
    * @param stepFactor factor by which to normalize up 
@@ -72,7 +85,7 @@ public abstract class ResourceCalculator {
   /**
    * Multiply resource <code>r</code> by factor <code>by</code> 
    * and normalize down using step-factor <code>stepFactor</code>.
-   * 
+   *
    * @param r resource to be multiplied
    * @param by multiplier
    * @param stepFactor factor by which to normalize down 
@@ -85,7 +98,7 @@ public abstract class ResourceCalculator {
    * Normalize resource <code>r</code> given the base 
    * <code>minimumResource</code> and verify against max allowed
    * <code>maximumResource</code>
-   * 
+   *
    * @param r resource
    * @param minimumResource step-factor
    * @param maximumResource the upper bound of the resource to be allocated
@@ -95,7 +108,7 @@ public abstract class ResourceCalculator {
       Resource maximumResource) {
     return normalize(r, minimumResource, maximumResource, minimumResource);
   }
-
+  
   /**
    * Normalize resource <code>r</code> given the base 
    * <code>minimumResource</code> and verify against max allowed
@@ -108,13 +121,13 @@ public abstract class ResourceCalculator {
    * @return normalized resource
    */
   public abstract Resource normalize(Resource r, Resource minimumResource,
-                                     Resource maximumResource, 
-                                     Resource stepFactor);
-
-
+      Resource maximumResource,
+      Resource stepFactor);
+  
+  
   /**
    * Round-up resource <code>r</code> given factor <code>stepFactor</code>.
-   * 
+   *
    * @param r resource
    * @param stepFactor step-factor
    * @return rounded resource
@@ -123,7 +136,7 @@ public abstract class ResourceCalculator {
   
   /**
    * Round-down resource <code>r</code> given factor <code>stepFactor</code>.
-   * 
+   *
    * @param r resource
    * @param stepFactor step-factor
    * @return rounded resource
@@ -134,7 +147,7 @@ public abstract class ResourceCalculator {
    * Divide resource <code>numerator</code> by resource <code>denominator</code>
    * using specified policy (domination, average, fairness etc.); hence overall
    * <code>clusterResource</code> is provided for context.
-   *  
+   *
    * @param clusterResource cluster resources
    * @param numerator numerator
    * @param denominator denominator
@@ -152,19 +165,19 @@ public abstract class ResourceCalculator {
    * @return true if divisor is invalid (should not be used), false else
    */
   public abstract boolean isInvalidDivisor(Resource r);
-
+  
   /**
    * Ratio of resource <code>a</code> to resource <code>b</code>.
-   * 
+   *
    * @param a resource 
    * @param b resource
    * @return ratio of resource <code>a</code> to resource <code>b</code>
    */
   public abstract float ratio(Resource a, Resource b);
-
+  
   /**
    * Divide-and-ceil <code>numerator</code> by <code>denominator</code>.
-   * 
+   *
    * @param numerator numerator resource
    * @param denominator denominator
    * @return resultant resource

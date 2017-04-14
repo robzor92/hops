@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -59,7 +59,7 @@ import org.apache.hadoop.yarn.util.resource.Resources;
  * Utility methods to aid serving RM data through the REST and RPC APIs
  */
 public class RMServerUtils {
-
+  
   public static List<RMNode> queryRMNodes(RMContext context,
       EnumSet<NodeState> acceptedStates) {
     // nodes contains nodes that are NEW, RUNNING OR UNHEALTHY
@@ -73,7 +73,7 @@ public class RMServerUtils {
         }
       }
     }
-
+    
     // inactiveNodes contains nodes that are DECOMMISSIONED, LOST, OR REBOOTED
     if (acceptedStates.contains(NodeState.DECOMMISSIONED) ||
         acceptedStates.contains(NodeState.LOST) ||
@@ -86,7 +86,7 @@ public class RMServerUtils {
     }
     return results;
   }
-
+  
   /**
    * Utility method to validate a list resource requests, by insuring that the
    * requested memory/vcore is non-negative and not greater than max
@@ -95,19 +95,19 @@ public class RMServerUtils {
       Resource maximumResource, String queueName, YarnScheduler scheduler,
       RMContext rmContext)
       throws InvalidResourceRequestException {
-
+    
     QueueInfo queueInfo = null;
     try {
       queueInfo = scheduler.getQueueInfo(queueName, false, false);
     } catch (IOException e) {
     }
-
+    
     for (ResourceRequest resReq : ask) {
       SchedulerUtils.normalizeAndvalidateRequest(resReq, maximumResource,
           queueName, scheduler, rmContext, queueInfo);
     }
   }
-
+  
   /*
    * @throw <code>InvalidResourceBlacklistRequestException </code> if the
    * resource is not able to be added to the blacklist.
@@ -123,12 +123,12 @@ public class RMServerUtils {
       }
     }
   }
-
+  
   /**
    * It will validate to make sure all the containers belong to correct
    * application attempt id. If not then it will throw
    * {@link InvalidContainerReleaseException}
-   * 
+   *
    * @param containerReleaseList
    *          containers to be released as requested by application master.
    * @param appAttemptId
@@ -136,9 +136,9 @@ public class RMServerUtils {
    * @throws InvalidContainerReleaseException
    */
   public static void
-      validateContainerReleaseRequest(List<ContainerId> containerReleaseList,
-          ApplicationAttemptId appAttemptId)
-          throws InvalidContainerReleaseException {
+  validateContainerReleaseRequest(List<ContainerId> containerReleaseList,
+      ApplicationAttemptId appAttemptId)
+      throws InvalidContainerReleaseException {
     for (ContainerId cId : containerReleaseList) {
       if (!appAttemptId.equals(cId.getApplicationAttemptId())) {
         throw new InvalidContainerReleaseException(
@@ -149,14 +149,14 @@ public class RMServerUtils {
       }
     }
   }
-
+  
   public static UserGroupInformation verifyAdminAccess(
       YarnAuthorizationProvider authorizer, String method, final Log LOG)
       throws IOException {
     // by default, this method will use AdminService as module name
     return verifyAdminAccess(authorizer, method, "AdminService", LOG);
   }
-
+  
   /**
    * Utility method to verify if the current user has access based on the
    * passed {@link AccessControlList}
@@ -180,24 +180,24 @@ public class RMServerUtils {
           "AdminService", "Couldn't get current user");
       throw ioe;
     }
-
+    
     if (!authorizer.isAdmin(user)) {
       LOG.warn("User " + user.getShortUserName() + " doesn't have permission" +
           " to call '" + method + "'");
-
+      
       RMAuditLogger.logFailure(user.getShortUserName(), method, "", module,
-        RMAuditLogger.AuditConstants.UNAUTHORIZED_USER);
-
+          RMAuditLogger.AuditConstants.UNAUTHORIZED_USER);
+      
       throw new AccessControlException("User " + user.getShortUserName() +
-              " doesn't have permission" +
-              " to call '" + method + "'");
+          " doesn't have permission" +
+          " to call '" + method + "'");
     }
     if (LOG.isTraceEnabled()) {
       LOG.trace(method + " invoked by user " + user.getShortUserName());
     }
     return user;
   }
-
+  
   public static YarnApplicationState createApplicationState(
       RMAppState rmAppState) {
     switch (rmAppState) {
@@ -220,9 +220,9 @@ public class RMServerUtils {
         return YarnApplicationState.FAILED;
       default:
         throw new YarnRuntimeException("Unknown state passed!");
-      }
+    }
   }
-
+  
   public static YarnApplicationAttemptState createApplicationAttemptState(
       RMAppAttemptState rmAppAttemptState) {
     switch (rmAppAttemptState) {
@@ -253,19 +253,19 @@ public class RMServerUtils {
         throw new YarnRuntimeException("Unknown state passed!");
     }
   }
-
+  
   /**
    * Statically defined dummy ApplicationResourceUsageREport.  Used as
    * a return value when a valid report cannot be found.
    */
   public static final ApplicationResourceUsageReport
-    DUMMY_APPLICATION_RESOURCE_USAGE_REPORT =
+      DUMMY_APPLICATION_RESOURCE_USAGE_REPORT =
       BuilderUtils.newApplicationResourceUsageReport(-1, -1,
-          Resources.createResource(-1, -1), Resources.createResource(-1, -1),
-          Resources.createResource(-1, -1), 0, 0);
-
-
-
+          Resources.createResource(-1, -1, -1),
+          Resources.createResource(-1, -1, -1),
+          Resources.createResource(-1, -1, -1), 0, 0, 0);
+  
+  
   /**
    * Find all configs whose name starts with
    * YarnConfiguration.RM_PROXY_USER_PREFIX, and add a record for each one by
@@ -277,7 +277,7 @@ public class RMServerUtils {
       String propName = entry.getKey();
       if (propName.startsWith(YarnConfiguration.RM_PROXY_USER_PREFIX)) {
         rmProxyUsers.put(ProxyUsers.CONF_HADOOP_PROXYUSER + "." +
-            propName.substring(YarnConfiguration.RM_PROXY_USER_PREFIX.length()),
+                propName.substring(YarnConfiguration.RM_PROXY_USER_PREFIX.length()),
             entry.getValue());
       }
     }

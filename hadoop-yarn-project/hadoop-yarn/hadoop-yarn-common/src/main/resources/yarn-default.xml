@@ -45,14 +45,14 @@
     <name>yarn.ipc.rpc.class</name>
     <value>org.apache.hadoop.yarn.ipc.HadoopYarnProtoRPC</value>
   </property>
-  
+
   <!-- Resource Manager Configs -->
   <property>
     <description>The hostname of the RM.</description>
     <name>yarn.resourcemanager.hostname</name>
     <value>0.0.0.0</value>
-  </property>    
-  
+  </property>
+
   <property>
     <description>The address of the applications manager interface in the RM.</description>
     <name>yarn.resourcemanager.address</name>
@@ -121,14 +121,14 @@
   </property>
 
   <property>
-      <description>
-        This configures the HTTP endpoint for Yarn Daemons.The following
-        values are supported:
-        - HTTP_ONLY : Service is provided only on http
-        - HTTPS_ONLY : Service is provided only on https
-      </description>
-      <name>yarn.http.policy</name>
-      <value>HTTP_ONLY</value>
+    <description>
+      This configures the HTTP endpoint for Yarn Daemons.The following
+      values are supported:
+      - HTTP_ONLY : Service is provided only on http
+      - HTTPS_ONLY : Service is provided only on https
+    </description>
+    <name>yarn.http.policy</name>
+    <value>HTTP_ONLY</value>
   </property>
 
   <property>
@@ -174,25 +174,25 @@
 
   <property>
     <description>Maximum time to wait to establish connection to
-    ResourceManager.</description>
+      ResourceManager.</description>
     <name>yarn.resourcemanager.connect.max-wait.ms</name>
     <value>900000</value>
   </property>
 
   <property>
     <description>How often to try connecting to the
-    ResourceManager.</description>
+      ResourceManager.</description>
     <name>yarn.resourcemanager.connect.retry-interval.ms</name>
     <value>30000</value>
   </property>
 
   <property>
     <description>The maximum number of application attempts. It's a global
-    setting for all application masters. Each application master can specify
-    its individual maximum number of application attempts via the API, but the
-    individual number cannot be more than the global upper bound. If it is,
-    the resourcemanager will override it. The default number is set to 2, to
-    allow at least one retry for AM.</description>
+      setting for all application masters. Each application master can specify
+      its individual maximum number of application attempts via the API, but the
+      individual number cannot be more than the global upper bound. If it is,
+      the resourcemanager will override it. The default number is set to 2, to
+      allow at least one retry for AM.</description>
     <name>yarn.resourcemanager.am.max-attempts</name>
     <value>2</value>
   </property>
@@ -211,17 +211,17 @@
 
   <property>
     <description>Flag to enable override of the default kerberos authentication
-    filter with the RM authentication filter to allow authentication using
-    delegation tokens(fallback to kerberos if the tokens are missing). Only
-    applicable when the http authentication type is kerberos.</description>
+      filter with the RM authentication filter to allow authentication using
+      delegation tokens(fallback to kerberos if the tokens are missing). Only
+      applicable when the http authentication type is kerberos.</description>
     <name>yarn.resourcemanager.webapp.delegation-token-auth-filter.enabled</name>
     <value>true</value>
   </property>
 
   <property>
     <description>Flag to enable cross-origin (CORS) support in the RM. This flag
-    requires the CORS filter initializer to be added to the filter initializers
-    list in core-site.xml.</description>
+      requires the CORS filter initializer to be added to the filter initializers
+      list in core-site.xml.</description>
     <name>yarn.resourcemanager.webapp.cross-origin.enabled</name>
     <value>false</value>
   </property>
@@ -258,38 +258,54 @@
 
   <property>
     <description>The minimum allocation for every container request at the RM,
-    in MBs. Memory requests lower than this will throw a
-    InvalidResourceRequestException.</description>
+      in MBs. Memory requests lower than this will throw a
+      InvalidResourceRequestException.</description>
     <name>yarn.scheduler.minimum-allocation-mb</name>
     <value>1024</value>
   </property>
 
   <property>
     <description>The maximum allocation for every container request at the RM,
-    in MBs. Memory requests higher than this will throw a
-    InvalidResourceRequestException.</description>
+      in MBs. Memory requests higher than this will throw a
+      InvalidResourceRequestException.</description>
     <name>yarn.scheduler.maximum-allocation-mb</name>
     <value>8192</value>
   </property>
 
   <property>
     <description>The minimum allocation for every container request at the RM,
-    in terms of virtual CPU cores. Requests lower than this will throw a
-    InvalidResourceRequestException.</description>
+      in terms of virtual CPU cores. Requests lower than this will throw a
+      InvalidResourceRequestException.</description>
     <name>yarn.scheduler.minimum-allocation-vcores</name>
     <value>1</value>
   </property>
 
   <property>
     <description>The maximum allocation for every container request at the RM,
-    in terms of virtual CPU cores. Requests higher than this will throw a
-    InvalidResourceRequestException.</description>
+      in terms of virtual CPU cores. Requests higher than this will throw a
+      InvalidResourceRequestException.</description>
     <name>yarn.scheduler.maximum-allocation-vcores</name>
     <value>32</value>
   </property>
 
   <property>
-    <description>Enable RM to recover state after starting. If true, then 
+    <description>The minimum allocation for every container request at the RM,
+      in terms of GPUs. Requests lower than this will throw a
+      InvalidResourceRequestException.</description>
+    <name>yarn.scheduler.minimum-allocation-gpus</name>
+    <value>0</value>
+  </property>
+
+  <property>
+    <description>The maximum allocation for every container request at the RM,
+      in terms of GPUs. Requests higher than this will throw a
+      InvalidResourceRequestException.</description>
+    <name>yarn.scheduler.maximum-allocation-gpus</name>
+    <value>8</value>
+  </property>
+
+  <property>
+    <description>Enable RM to recover state after starting. If true, then
       yarn.resourcemanager.store.class must be specified. </description>
     <name>yarn.resourcemanager.recovery.enabled</name>
     <value>false</value>
@@ -316,7 +332,7 @@
 
   <property>
     <description>Enable RM work preserving recovery. This configuration is private
-    to YARN for experimenting the feature.
+      to YARN for experimenting the feature.
     </description>
     <name>yarn.resourcemanager.work-preserving-recovery.enabled</name>
     <value>true</value>
@@ -324,9 +340,9 @@
 
   <property>
     <description>Set the amount of time RM waits before allocating new
-    containers on work-preserving-recovery. Such wait period gives RM a chance
-    to settle down resyncing with NMs in the cluster on recovery, before assigning
-    new containers to applications.
+      containers on work-preserving-recovery. Such wait period gives RM a chance
+      to settle down resyncing with NMs in the cluster on recovery, before assigning
+      new containers to applications.
     </description>
     <name>yarn.resourcemanager.work-preserving-recovery.scheduling-wait-ms</name>
     <value>10000</value>
@@ -347,14 +363,14 @@
 
   <property>
     <description>The maximum number of completed applications RM state
-    store keeps, less than or equals to ${yarn.resourcemanager.max-completed-applications}.
-    By default, it equals to ${yarn.resourcemanager.max-completed-applications}.
-    This ensures that the applications kept in the state store are consistent with
-    the applications remembered in RM memory.
-    Any values larger than ${yarn.resourcemanager.max-completed-applications} will
-    be reset to ${yarn.resourcemanager.max-completed-applications}.
-    Note that this value impacts the RM recovery performance.Typically,
-    a smaller value indicates better performance on RM recovery.
+      store keeps, less than or equals to ${yarn.resourcemanager.max-completed-applications}.
+      By default, it equals to ${yarn.resourcemanager.max-completed-applications}.
+      This ensures that the applications kept in the state store are consistent with
+      the applications remembered in RM memory.
+      Any values larger than ${yarn.resourcemanager.max-completed-applications} will
+      be reset to ${yarn.resourcemanager.max-completed-applications}.
+      Note that this value impacts the RM recovery performance.Typically,
+      a smaller value indicates better performance on RM recovery.
     </description>
     <name>yarn.resourcemanager.state-store.max-completed-applications</name>
     <value>${yarn.resourcemanager.max-completed-applications}</value>
@@ -387,19 +403,19 @@
 
   <property>
     <description>Full path of the ZooKeeper znode where RM state will be
-    stored. This must be supplied when using
-    org.apache.hadoop.yarn.server.resourcemanager.recovery.ZKRMStateStore
-    as the value for yarn.resourcemanager.store.class</description>
+      stored. This must be supplied when using
+      org.apache.hadoop.yarn.server.resourcemanager.recovery.ZKRMStateStore
+      as the value for yarn.resourcemanager.store.class</description>
     <name>yarn.resourcemanager.zk-state-store.parent-path</name>
     <value>/rmstore</value>
   </property>
 
   <property>
     <description>ZooKeeper session timeout in milliseconds. Session expiration
-    is managed by the ZooKeeper cluster itself, not by the client. This value is
-    used by the cluster to determine when the client's session expires.
-    Expirations happens when the cluster does not hear from the client within
-    the specified session timeout period (i.e. no heartbeat).</description>
+      is managed by the ZooKeeper cluster itself, not by the client. This value is
+      used by the cluster to determine when the client's session expires.
+      Expirations happens when the cluster does not hear from the client within
+      the specified session timeout period (i.e. no heartbeat).</description>
     <name>yarn.resourcemanager.zk-timeout-ms</name>
     <value>10000</value>
   </property>
@@ -437,21 +453,21 @@
 
   <property>
     <description>
-        Specify the auths to be used for the ACL's specified in both the
-        yarn.resourcemanager.zk-acl and
-        yarn.resourcemanager.zk-state-store.root-node.acl properties.  This
-        takes a comma-separated list of authentication mechanisms, each of the
-        form 'scheme:auth' (the same syntax used for the 'addAuth' command in
-        the ZK CLI).
+      Specify the auths to be used for the ACL's specified in both the
+      yarn.resourcemanager.zk-acl and
+      yarn.resourcemanager.zk-state-store.root-node.acl properties.  This
+      takes a comma-separated list of authentication mechanisms, each of the
+      form 'scheme:auth' (the same syntax used for the 'addAuth' command in
+      the ZK CLI).
     </description>
     <name>yarn.resourcemanager.zk-auth</name>
   </property>
 
   <property>
     <description>URI pointing to the location of the FileSystem path where
-    RM state will be stored. This must be supplied when using
-    org.apache.hadoop.yarn.server.resourcemanager.recovery.FileSystemRMStateStore
-    as the value for yarn.resourcemanager.store.class</description>
+      RM state will be stored. This must be supplied when using
+      org.apache.hadoop.yarn.server.resourcemanager.recovery.FileSystemRMStateStore
+      as the value for yarn.resourcemanager.store.class</description>
     <name>yarn.resourcemanager.fs.state-store.uri</name>
     <value>${hadoop.tmp.dir}/yarn/system/rmstore</value>
     <!--value>hdfs://localhost:9000/rmstore</value-->
@@ -459,9 +475,9 @@
 
   <property>
     <description>hdfs client retry policy specification. hdfs client retry
-    is always enabled. Specified in pairs of sleep-time and number-of-retries
-    and (t0, n0), (t1, n1), ..., the first n0 retries sleep t0 milliseconds on
-    average, the following n1 retries sleep t1 milliseconds on average, and so on.
+      is always enabled. Specified in pairs of sleep-time and number-of-retries
+      and (t0, n0), (t1, n1), ..., the first n0 retries sleep t0 milliseconds on
+      average, the following n1 retries sleep t1 milliseconds on average, and so on.
     </description>
     <name>yarn.resourcemanager.fs.state-store.retry-policy-spec</name>
     <value>2000, 500</value>
@@ -469,7 +485,7 @@
 
   <property>
     <description>the number of retries to recover from IOException in
-    FileSystemRMStateStore.
+      FileSystemRMStateStore.
     </description>
     <name>yarn.resourcemanager.fs.state-store.num-retries</name>
     <value>0</value>
@@ -484,16 +500,16 @@
 
   <property>
     <description>Local path where the RM state will be stored when using
-    org.apache.hadoop.yarn.server.resourcemanager.recovery.LeveldbRMStateStore
-    as the value for yarn.resourcemanager.store.class</description>
+      org.apache.hadoop.yarn.server.resourcemanager.recovery.LeveldbRMStateStore
+      as the value for yarn.resourcemanager.store.class</description>
     <name>yarn.resourcemanager.leveldb-state-store.path</name>
     <value>${hadoop.tmp.dir}/yarn/system/rmstore</value>
   </property>
 
   <property>
     <description>The time in seconds between full compactions of the leveldb
-    database. Setting the interval to zero disables the full compaction
-    cycles.</description>
+      database. Setting the interval to zero disables the full compaction
+      cycles.</description>
     <name>yarn.resourcemanager.leveldb-state-store.compaction-interval-secs</name>
     <value>3600</value>
   </property>
@@ -633,23 +649,23 @@
   </property>
 
   <property>
-  <description>If true, ResourceManager will have proxy-user privileges.
-    Use case: In a secure cluster, YARN requires the user hdfs delegation-tokens to
-    do localization and log-aggregation on behalf of the user. If this is set to true,
-    ResourceManager is able to request new hdfs delegation tokens on behalf of
-    the user. This is needed by long-running-service, because the hdfs tokens
-    will eventually expire and YARN requires new valid tokens to do localization
-    and log-aggregation. Note that to enable this use case, the corresponding
-    HDFS NameNode has to configure ResourceManager as the proxy-user so that
-    ResourceManager can itself ask for new tokens on behalf of the user when
-    tokens are past their max-life-time.</description>
+    <description>If true, ResourceManager will have proxy-user privileges.
+      Use case: In a secure cluster, YARN requires the user hdfs delegation-tokens to
+      do localization and log-aggregation on behalf of the user. If this is set to true,
+      ResourceManager is able to request new hdfs delegation tokens on behalf of
+      the user. This is needed by long-running-service, because the hdfs tokens
+      will eventually expire and YARN requires new valid tokens to do localization
+      and log-aggregation. Note that to enable this use case, the corresponding
+      HDFS NameNode has to configure ResourceManager as the proxy-user so that
+      ResourceManager can itself ask for new tokens on behalf of the user when
+      tokens are past their max-life-time.</description>
     <name>yarn.resourcemanager.proxy-user-privileges.enabled</name>
     <value>false</value>
   </property>
 
   <property>
     <description>Interval for the roll over for the master key used to generate
-        application tokens
+      application tokens
     </description>
     <name>yarn.resourcemanager.am-rm-tokens.master-key-rolling-interval-secs</name>
     <value>86400</value>
@@ -657,10 +673,10 @@
 
   <property>
     <description>Interval for the roll over for the master key used to generate
-        container tokens. It is expected to be much greater than
-        yarn.nm.liveness-monitor.expiry-interval-ms and
-        yarn.resourcemanager.rm.container-allocation.expiry-interval-ms. Otherwise the
-        behavior is undefined.
+      container tokens. It is expected to be much greater than
+      yarn.nm.liveness-monitor.expiry-interval-ms and
+      yarn.resourcemanager.rm.container-allocation.expiry-interval-ms. Otherwise the
+      behavior is undefined.
     </description>
     <name>yarn.resourcemanager.container-tokens.master-key-rolling-interval-secs</name>
     <value>86400</value>
@@ -682,26 +698,26 @@
 
   <property>
     <description>Enable a set of periodic monitors (specified in
-        yarn.resourcemanager.scheduler.monitor.policies) that affect the
-        scheduler.</description>
+      yarn.resourcemanager.scheduler.monitor.policies) that affect the
+      scheduler.</description>
     <name>yarn.resourcemanager.scheduler.monitor.enable</name>
     <value>false</value>
   </property>
 
   <property>
     <description>The list of SchedulingEditPolicy classes that interact with
-        the scheduler. A particular module may be incompatible with the
-        scheduler, other policies, or a configuration of either.</description>
+      the scheduler. A particular module may be incompatible with the
+      scheduler, other policies, or a configuration of either.</description>
     <name>yarn.resourcemanager.scheduler.monitor.policies</name>
     <value>org.apache.hadoop.yarn.server.resourcemanager.monitor.capacity.ProportionalCapacityPreemptionPolicy</value>
   </property>
 
   <property>
     <description>The class to use as the configuration provider.
-    If org.apache.hadoop.yarn.LocalConfigurationProvider is used,
-    the local configuration will be loaded.
-    If org.apache.hadoop.yarn.FileSystemBasedConfigurationProvider is used,
-    the configuration which will be loaded should be uploaded to remote File system first.
+      If org.apache.hadoop.yarn.LocalConfigurationProvider is used,
+      the local configuration will be loaded.
+      If org.apache.hadoop.yarn.FileSystemBasedConfigurationProvider is used,
+      the configuration which will be loaded should be uploaded to remote File system first.
     </description>
     <name>yarn.resourcemanager.configuration.provider-class</name>
     <value>org.apache.hadoop.yarn.LocalConfigurationProvider</value>
@@ -710,14 +726,14 @@
 
   <property>
     <description>The setting that controls whether yarn system metrics is
-    published on the timeline server or not by RM.</description>
+      published on the timeline server or not by RM.</description>
     <name>yarn.resourcemanager.system-metrics-publisher.enabled</name>
     <value>false</value>
   </property>
 
   <property>
     <description>Number of worker threads that send the yarn system metrics
-    data.</description>
+      data.</description>
     <name>yarn.resourcemanager.system-metrics-publisher.dispatcher.pool-size</name>
     <value>10</value>
   </property>
@@ -728,7 +744,7 @@
     <name>yarn.nodemanager.hostname</name>
     <value>0.0.0.0</value>
   </property>
-  
+
   <property>
     <description>The address of the container manager in the NM.</description>
     <name>yarn.nodemanager.address</name>
@@ -762,7 +778,7 @@
     <description>who will execute(launch) the containers.</description>
     <name>yarn.nodemanager.container-executor.class</name>
     <value>org.apache.hadoop.yarn.server.nodemanager.DefaultContainerExecutor</value>
-<!--<value>org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor</value>-->
+    <!--<value>org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor</value>-->
   </property>
 
   <property>
@@ -779,18 +795,18 @@
 
   <property>
     <description>
-      Number of seconds after an application finishes before the nodemanager's 
+      Number of seconds after an application finishes before the nodemanager's
       DeletionService will delete the application's localized file directory
       and log directory.
-      
+
       To diagnose Yarn application problems, set this property's value large
       enough (for example, to 600 = 10 minutes) to permit examination of these
-      directories. After changing the property's value, you must restart the 
+      directories. After changing the property's value, you must restart the
       nodemanager in order for it to have an effect.
 
       The roots of Yarn applications' work directories is configurable with
       the yarn.nodemanager.local-dirs property (see below), and the roots
-      of the Yarn applications' log directories is configurable with the 
+      of the Yarn applications' log directories is configurable with the
       yarn.nodemanager.log-dirs property (see also below).
     </description>
     <name>yarn.nodemanager.delete.debug-delay-sec</name>
@@ -804,12 +820,12 @@
   </property>
 
   <property>
-    <description>List of directories to store localized files in. An 
+    <description>List of directories to store localized files in. An
       application's localized file directory will be found in:
       ${yarn.nodemanager.local-dirs}/usercache/${user}/appcache/application_${appid}.
       Individual containers' work directories, called container_${contid}, will
       be subdirectories of this.
-   </description>
+    </description>
     <name>yarn.nodemanager.local-dirs</name>
     <value>${hadoop.tmp.dir}/nm-local-dir</value>
   </property>
@@ -828,7 +844,7 @@
       until it becomes full. If a file is removed from a sub-directory that
       is marked full, then that sub-directory will be used back again to
       localize files.
-   </description>
+    </description>
     <name>yarn.nodemanager.local-cache.max-files-per-directory</name>
     <value>8192</value>
   </property>
@@ -847,7 +863,7 @@
 
   <property>
     <description>Target size of localizer cache in MB, per nodemanager. It is
-      a target retention size that only includes resources with PUBLIC and 
+      a target retention size that only includes resources with PUBLIC and
       PRIVATE visibility and excludes resources with APPLICATION visibility
     </description>
     <name>yarn.nodemanager.localizer.cache.target-size-mb</name>
@@ -868,9 +884,9 @@
 
   <property>
     <description>
-      Where to store container logs. An application's localized log directory 
+      Where to store container logs. An application's localized log directory
       will be found in ${yarn.nodemanager.log-dirs}/application_${appid}.
-      Individual containers' log directories will be below this, in directories 
+      Individual containers' log directories will be below this, in directories
       named container_{$contid}. Each container directory will contain the files
       stderr, stdin, and syslog generated by that container.
     </description>
@@ -892,24 +908,24 @@
   </property>
 
   <property>
-    <description>How long to keep aggregation logs before deleting them.  -1 disables. 
-    Be careful set this too small and you will spam the name node.</description>
+    <description>How long to keep aggregation logs before deleting them.  -1 disables.
+      Be careful set this too small and you will spam the name node.</description>
     <name>yarn.log-aggregation.retain-seconds</name>
     <value>-1</value>
-  </property> 
-  
+  </property>
+
   <property>
     <description>How long to wait between aggregated log retention checks.
-    If set to 0 or a negative value then the value is computed as one-tenth
-    of the aggregated log retention time. Be careful set this too small and
-    you will spam the name node.</description>
+      If set to 0 or a negative value then the value is computed as one-tenth
+      of the aggregated log retention time. Be careful set this too small and
+      you will spam the name node.</description>
     <name>yarn.log-aggregation.retain-check-interval-seconds</name>
     <value>-1</value>
   </property>
 
   <property>
     <description>Time in seconds to retain user logs. Only applicable if
-    log aggregation is disabled
+      log aggregation is disabled
     </description>
     <name>yarn.nodemanager.log.retain-seconds</name>
     <value>10800</value>
@@ -921,7 +937,7 @@
     <value>/tmp/logs</value>
   </property>
   <property>
-    <description>The remote log dir will be created at 
+    <description>The remote log dir will be created at
       {yarn.nodemanager.remote-app-log-dir}/${user}/{thisParam}
     </description>
     <name>yarn.nodemanager.remote-app-log-dir-suffix</name>
@@ -929,31 +945,31 @@
   </property>
 
   <property>
-    <description>Amount of physical memory, in MB, that can be allocated 
-    for containers.</description>
+    <description>Amount of physical memory, in MB, that can be allocated
+      for containers.</description>
     <name>yarn.nodemanager.resource.memory-mb</name>
     <value>8192</value>
   </property>
 
   <property>
     <description>Whether physical memory limits will be enforced for
-    containers.</description>
+      containers.</description>
     <name>yarn.nodemanager.pmem-check-enabled</name>
     <value>true</value>
   </property>
 
   <property>
     <description>Whether virtual memory limits will be enforced for
-    containers.</description>
+      containers.</description>
     <name>yarn.nodemanager.vmem-check-enabled</name>
     <value>true</value>
   </property>
 
   <property>
     <description>Ratio between virtual memory to physical memory when
-    setting memory limits for containers. Container allocations are
-    expressed in terms of physical memory, and virtual memory usage
-    is allowed to exceed this allocation by this ratio.
+      setting memory limits for containers. Container allocations are
+      expressed in terms of physical memory, and virtual memory usage
+      is allowed to exceed this allocation by this ratio.
     </description>
     <name>yarn.nodemanager.vmem-pmem-ratio</name>
     <value>2.1</value>
@@ -961,18 +977,27 @@
 
   <property>
     <description>Number of vcores that can be allocated
-    for containers. This is used by the RM scheduler when allocating
-    resources for containers. This is not used to limit the number of
-    physical cores used by YARN containers.</description>
+      for containers. This is used by the RM scheduler when allocating
+      resources for containers. This is not used to limit the number of
+      physical cores used by YARN containers.</description>
     <name>yarn.nodemanager.resource.cpu-vcores</name>
     <value>8</value>
   </property>
 
   <property>
+    <description>Number of gcores that can be allocated
+      for containers. This is used by the RM scheduler when allocating
+      resources for containers. This is not used to limit the number of
+      gpu cores used by YARN containers.</description>
+    <name>yarn.nodemanager.resource.gpus</name>
+    <value>8</value>
+  </property>
+
+  <property>
     <description>Percentage of CPU that can be allocated
-    for containers. This setting allows users to limit the amount of
-    CPU that YARN containers use. Currently functional only
-    on Linux using cgroups. The default is to use 100% of CPU.
+      for containers. This setting allows users to limit the amount of
+      CPU that YARN containers use. Currently functional only
+      on Linux using cgroups. The default is to use 100% of CPU.
     </description>
     <name>yarn.nodemanager.resource.percentage-physical-cpu-limit</name>
     <value>100</value>
@@ -1027,28 +1052,28 @@
 
   <property>
     <description>The minimum fraction of number of disks to be healthy for the
-    nodemanager to launch new containers. This correspond to both
-    yarn.nodemanager.local-dirs and yarn.nodemanager.log-dirs. i.e. If there
-    are less number of healthy local-dirs (or log-dirs) available, then
-    new containers will not be launched on this node.</description>
+      nodemanager to launch new containers. This correspond to both
+      yarn.nodemanager.local-dirs and yarn.nodemanager.log-dirs. i.e. If there
+      are less number of healthy local-dirs (or log-dirs) available, then
+      new containers will not be launched on this node.</description>
     <name>yarn.nodemanager.disk-health-checker.min-healthy-disks</name>
     <value>0.25</value>
   </property>
 
   <property>
-    <description>The maximum percentage of disk space utilization allowed after 
-    which a disk is marked as bad. Values can range from 0.0 to 100.0. 
-    If the value is greater than or equal to 100, the nodemanager will check 
-    for full disk. This applies to yarn.nodemanager.local-dirs and
-    yarn.nodemanager.log-dirs.</description>
+    <description>The maximum percentage of disk space utilization allowed after
+      which a disk is marked as bad. Values can range from 0.0 to 100.0.
+      If the value is greater than or equal to 100, the nodemanager will check
+      for full disk. This applies to yarn.nodemanager.local-dirs and
+      yarn.nodemanager.log-dirs.</description>
     <name>yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage</name>
     <value>90.0</value>
   </property>
 
   <property>
     <description>The minimum space that must be available on a disk for
-    it to be used. This applies to yarn.nodemanager.local-dirs and
-    yarn.nodemanager.log-dirs.</description>
+      it to be used. This applies to yarn.nodemanager.local-dirs and
+      yarn.nodemanager.log-dirs.</description>
     <name>yarn.nodemanager.disk-health-checker.min-free-space-per-disk-mb</name>
     <value>0</value>
   </property>
@@ -1067,27 +1092,27 @@
 
   <property>
     <description>The cgroups hierarchy under which to place YARN proccesses (cannot contain commas).
-    If yarn.nodemanager.linux-container-executor.cgroups.mount is false (that is, if cgroups have
-    been pre-configured), then this cgroups hierarchy must already exist and be writable by the
-    NodeManager user, otherwise the NodeManager may fail.
-    Only used when the LCE resources handler is set to the CgroupsLCEResourcesHandler.</description>
+      If yarn.nodemanager.linux-container-executor.cgroups.mount is false (that is, if cgroups have
+      been pre-configured), then this cgroups hierarchy must already exist and be writable by the
+      NodeManager user, otherwise the NodeManager may fail.
+      Only used when the LCE resources handler is set to the CgroupsLCEResourcesHandler.</description>
     <name>yarn.nodemanager.linux-container-executor.cgroups.hierarchy</name>
     <value>/hadoop-yarn</value>
   </property>
 
   <property>
     <description>Whether the LCE should attempt to mount cgroups if not found.
-    Only used when the LCE resources handler is set to the CgroupsLCEResourcesHandler.</description>
+      Only used when the LCE resources handler is set to the CgroupsLCEResourcesHandler.</description>
     <name>yarn.nodemanager.linux-container-executor.cgroups.mount</name>
     <value>false</value>
   </property>
 
   <property>
     <description>Where the LCE should attempt to mount cgroups if not found. Common locations
-    include /sys/fs/cgroup and /cgroup; the default location can vary depending on the Linux
-    distribution in use. This path must exist before the NodeManager is launched.
-    Only used when the LCE resources handler is set to the CgroupsLCEResourcesHandler, and
-    yarn.nodemanager.linux-container-executor.cgroups.mount is true.</description>
+      include /sys/fs/cgroup and /cgroup; the default location can vary depending on the Linux
+      distribution in use. This path must exist before the NodeManager is launched.
+      Only used when the LCE resources handler is set to the CgroupsLCEResourcesHandler, and
+      yarn.nodemanager.linux-container-executor.cgroups.mount is true.</description>
     <name>yarn.nodemanager.linux-container-executor.cgroups.mount-path</name>
   </property>
 
@@ -1114,32 +1139,32 @@
 
   <property>
     <description>The allowed pattern for UNIX user names enforced by
-    Linux-container-executor when used in nonsecure mode (use case for this
-    is using cgroups). The default value is taken from /usr/sbin/adduser</description>
+      Linux-container-executor when used in nonsecure mode (use case for this
+      is using cgroups). The default value is taken from /usr/sbin/adduser</description>
     <name>yarn.nodemanager.linux-container-executor.nonsecure-mode.user-pattern</name>
     <value>^[_.A-Za-z0-9][-@_.A-Za-z0-9]{0,255}?[$]?$</value>
   </property>
 
   <property>
     <description>This flag determines whether apps should run with strict resource limits
-    or be allowed to consume spare resources if they need them. For example, turning the
-    flag on will restrict apps to use only their share of CPU, even if the node has spare
-    CPU cycles. The default value is false i.e. use available resources. Please note that
-    turning this flag on may reduce job throughput on the cluster.</description>
+      or be allowed to consume spare resources if they need them. For example, turning the
+      flag on will restrict apps to use only their share of CPU, even if the node has spare
+      CPU cycles. The default value is false i.e. use available resources. Please note that
+      turning this flag on may reduce job throughput on the cluster.</description>
     <name>yarn.nodemanager.linux-container-executor.cgroups.strict-resource-usage</name>
     <value>false</value>
   </property>
 
   <property>
     <description>This flag determines whether memory limit will be set for the Windows Job
-    Object of the containers launched by the default container executor.</description>
+      Object of the containers launched by the default container executor.</description>
     <name>yarn.nodemanager.windows-container.memory-limit.enabled</name>
     <value>false</value>
   </property>
 
   <property>
     <description>This flag determines whether CPU limit will be set for the Windows Job
-    Object of the containers launched by the default container executor.</description>
+      Object of the containers launched by the default container executor.</description>
     <name>yarn.nodemanager.windows-container.cpu-limit.enabled</name>
     <value>false</value>
   </property>
@@ -1177,8 +1202,8 @@
   </property>
 
   <property>
-    <description>The minimum allowed version of a resourcemanager that a nodemanager will connect to.  
-      The valid values are NONE (no version checking), EqualToNM (the resourcemanager's version is 
+    <description>The minimum allowed version of a resourcemanager that a nodemanager will connect to.
+      The valid values are NONE (no version checking), EqualToNM (the resourcemanager's version is
       equal to or greater than the NM version), or a Version String.</description>
     <name>yarn.nodemanager.resourcemanager.minimum.version</name>
     <value>NONE</value>
@@ -1186,7 +1211,7 @@
 
   <property>
     <description>Max number of threads in NMClientAsync to process container
-    management events</description>
+      management events</description>
     <name>yarn.client.nodemanager-client-async.thread-pool-max-size</name>
     <value>500</value>
   </property>
@@ -1226,7 +1251,7 @@
     <name>yarn.client.max-cached-nodemanagers-proxies</name>
     <value>0</value>
   </property>
-  
+
   <property>
     <description>Enable the node manager to recover after starting</description>
     <name>yarn.nodemanager.recovery.enabled</name>
@@ -1235,22 +1260,22 @@
 
   <property>
     <description>The local filesystem directory in which the node manager will
-    store state when recovery is enabled.</description>
+      store state when recovery is enabled.</description>
     <name>yarn.nodemanager.recovery.dir</name>
     <value>${hadoop.tmp.dir}/yarn-nm-recovery</value>
   </property>
 
   <property>
     <description>The time in seconds between full compactions of the NM state
-    database. Setting the interval to zero disables the full compaction
-    cycles.</description>
+      database. Setting the interval to zero disables the full compaction
+      cycles.</description>
     <name>yarn.nodemanager.recovery.compaction-interval-secs</name>
     <value>3600</value>
   </property>
 
   <property>
     <description>
-    The delay time ms to unregister container metrics after completion.
+      The delay time ms to unregister container metrics after completion.
     </description>
     <name>yarn.nodemanager.container-metrics.unregister-delay-ms</name>
     <value>10000</value>
@@ -1283,34 +1308,34 @@
   </property>
 
   <!-- WebAppProxy Configuration-->
-  
+
   <property>
     <description>The kerberos principal for the proxy, if the proxy is not
-    running as part of the RM.</description>
+      running as part of the RM.</description>
     <name>yarn.web-proxy.principal</name>
     <value/>
   </property>
-  
+
   <property>
-    <description>Keytab for WebAppProxy, if the proxy is not running as part of 
-    the RM.</description>
+    <description>Keytab for WebAppProxy, if the proxy is not running as part of
+      the RM.</description>
     <name>yarn.web-proxy.keytab</name>
   </property>
-  
+
   <property>
     <description>The address for the web proxy as HOST:PORT, if this is not
-     given then the proxy will run as part of the RM</description>
-     <name>yarn.web-proxy.address</name>
-     <value/>
+      given then the proxy will run as part of the RM</description>
+    <name>yarn.web-proxy.address</name>
+    <value/>
   </property>
 
   <!-- Applications' Configuration-->
-  
+
   <property>
     <description>
       CLASSPATH for YARN applications. A comma-separated list
       of CLASSPATH entries. When this value is empty, the following default
-      CLASSPATH for YARN applications would be used. 
+      CLASSPATH for YARN applications would be used.
       For Linux:
       $HADOOP_CONF_DIR,
       $HADOOP_COMMON_HOME/share/hadoop/common/*,
@@ -1336,13 +1361,13 @@
 
   <property>
     <description>Indicate what is the current version of the running
-    timeline service. For example, if "yarn.timeline-service.version" is 1.5,
-    and "yarn.timeline-service.enabled" is true, it means the cluster will and
-    should bring up the timeline service v.1.5.
-    On the client side, if the client uses the same version of timeline service,
-    it should succeed. If the client chooses to use a smaller version in spite of this,
-    then depending on how robust the compatibility story is between versions,
-    the results may vary.
+      timeline service. For example, if "yarn.timeline-service.version" is 1.5,
+      and "yarn.timeline-service.enabled" is true, it means the cluster will and
+      should bring up the timeline service v.1.5.
+      On the client side, if the client uses the same version of timeline service,
+      it should succeed. If the client chooses to use a smaller version in spite of this,
+      then depending on how robust the compatibility story is between versions,
+      the results may vary.
     </description>
     <name>yarn.timeline-service.version</name>
     <value>1.0f</value>
@@ -1350,11 +1375,11 @@
 
   <property>
     <description>
-    In the server side it indicates whether timeline service is enabled or not.
-    And in the client side, users can enable it to indicate whether client wants
-    to use timeline service. If it's enabled in the client side along with
-    security, then yarn client tries to fetch the delegation tokens for the
-    timeline server.
+      In the server side it indicates whether timeline service is enabled or not.
+      And in the client side, users can enable it to indicate whether client wants
+      to use timeline service. If it's enabled in the client side along with
+      security, then yarn client tries to fetch the delegation tokens for the
+      timeline server.
     </description>
     <name>yarn.timeline-service.enabled</name>
     <value>false</value>
@@ -1368,7 +1393,7 @@
 
   <property>
     <description>This is default address for the timeline server to start the
-    RPC server.</description>
+      RPC server.</description>
     <name>yarn.timeline-service.address</name>
     <value>${yarn.timeline-service.hostname}:10200</value>
   </property>
@@ -1498,8 +1523,8 @@
 
   <property>
     <description>
-    Default maximum number of retires for timeline servive client
-    and value -1 means no limit.
+      Default maximum number of retires for timeline servive client
+      and value -1 means no limit.
     </description>
     <name>yarn.timeline-service.client.max-retries</name>
     <value>30</value>
@@ -1507,16 +1532,16 @@
 
   <property>
     <description>Client policy for whether timeline operations are non-fatal.
-    Should the failure to obtain a delegation token be considered an application
-    failure (option = false),  or should the client attempt to continue to
-    publish information without it (option=true)</description>
+      Should the failure to obtain a delegation token be considered an application
+      failure (option = false),  or should the client attempt to continue to
+      publish information without it (option=true)</description>
     <name>yarn.timeline-service.client.best-effort</name>
     <value>false</value>
   </property>
 
   <property>
     <description>
-    Default retry time interval for timeline servive client.
+      Default retry time interval for timeline servive client.
     </description>
     <name>yarn.timeline-service.client.retry-interval-ms</name>
     <value>1000</value>
@@ -1524,7 +1549,7 @@
 
   <property>
     <description>Enable timeline server to recover state after starting. If
-    true, then yarn.timeline-service.state-store-class must be specified.
+      true, then yarn.timeline-service.state-store-class must be specified.
     </description>
     <name>yarn.timeline-service.recovery.enabled</name>
     <value>false</value>
@@ -1557,7 +1582,7 @@
 
   <property>
     <description>The level of nested directories before getting to the checksum
-    directories. It must be non-negative.</description>
+      directories. It must be non-negative.</description>
     <name>yarn.sharedcache.nested-level</name>
     <value>3</value>
   </property>
@@ -1573,29 +1598,29 @@
     <name>yarn.sharedcache.app-checker.class</name>
     <value>org.apache.hadoop.yarn.server.sharedcachemanager.RemoteAppChecker</value>
   </property>
-  
+
   <property>
     <description>A resource in the in-memory store is considered stale
-    if the time since the last reference exceeds the staleness period.
-    This value is specified in minutes.</description>
+      if the time since the last reference exceeds the staleness period.
+      This value is specified in minutes.</description>
     <name>yarn.sharedcache.store.in-memory.staleness-period-mins</name>
     <value>10080</value>
   </property>
-  
+
   <property>
     <description>Initial delay before the in-memory store runs its first check
-    to remove dead initial applications. Specified in minutes.</description>
+      to remove dead initial applications. Specified in minutes.</description>
     <name>yarn.sharedcache.store.in-memory.initial-delay-mins</name>
     <value>10</value>
   </property>
-  
+
   <property>
     <description>The frequency at which the in-memory store checks to remove
-    dead initial applications. Specified in minutes.</description>
+      dead initial applications. Specified in minutes.</description>
     <name>yarn.sharedcache.store.in-memory.check-period-mins</name>
     <value>720</value>
   </property>
-  
+
   <property>
     <description>The address of the admin interface in the SCM (shared cache manager)</description>
     <name>yarn.sharedcache.admin.address</name>
@@ -1616,70 +1641,70 @@
 
   <property>
     <description>The frequency at which a cleaner task runs.
-    Specified in minutes.</description>
+      Specified in minutes.</description>
     <name>yarn.sharedcache.cleaner.period-mins</name>
     <value>1440</value>
   </property>
 
   <property>
     <description>Initial delay before the first cleaner task is scheduled.
-    Specified in minutes.</description>
+      Specified in minutes.</description>
     <name>yarn.sharedcache.cleaner.initial-delay-mins</name>
     <value>10</value>
   </property>
 
   <property>
     <description>The time to sleep between processing each shared cache
-    resource. Specified in milliseconds.</description>
+      resource. Specified in milliseconds.</description>
     <name>yarn.sharedcache.cleaner.resource-sleep-ms</name>
     <value>0</value>
   </property>
 
   <property>
     <description>The address of the node manager interface in the SCM
-    (shared cache manager)</description>
+      (shared cache manager)</description>
     <name>yarn.sharedcache.uploader.server.address</name>
     <value>0.0.0.0:8046</value>
   </property>
 
   <property>
     <description>The number of threads used to handle shared cache manager
-    requests from the node manager (50 by default)</description>
+      requests from the node manager (50 by default)</description>
     <name>yarn.sharedcache.uploader.server.thread-count</name>
     <value>50</value>
   </property>
 
   <property>
     <description>The address of the client interface in the SCM
-    (shared cache manager)</description>
+      (shared cache manager)</description>
     <name>yarn.sharedcache.client-server.address</name>
     <value>0.0.0.0:8045</value>
   </property>
 
   <property>
     <description>The number of threads used to handle shared cache manager
-    requests from clients (50 by default)</description>
+      requests from clients (50 by default)</description>
     <name>yarn.sharedcache.client-server.thread-count</name>
     <value>50</value>
   </property>
 
   <property>
     <description>The algorithm used to compute checksums of files (SHA-256 by
-    default)</description>
+      default)</description>
     <name>yarn.sharedcache.checksum.algo.impl</name>
     <value>org.apache.hadoop.yarn.sharedcache.ChecksumSHA256Impl</value>
   </property>
 
   <property>
     <description>The replication factor for the node manager uploader for the
-    shared cache (10 by default)</description>
+      shared cache (10 by default)</description>
     <name>yarn.sharedcache.nm.uploader.replication.factor</name>
     <value>10</value>
   </property>
 
   <property>
     <description>The number of threads used to upload files from a node manager
-    instance (20 by default)</description>
+      instance (20 by default)</description>
     <name>yarn.sharedcache.nm.uploader.thread-count</name>
     <value>20</value>
   </property>
@@ -1687,20 +1712,20 @@
   <!-- Other configuration -->
   <property>
     <description>The interval that the yarn client library uses to poll the
-    completion status of the asynchronous API of application client protocol.
+      completion status of the asynchronous API of application client protocol.
     </description>
     <name>yarn.client.application-client-protocol.poll-interval-ms</name>
     <value>200</value>
   </property>
 
   <property>
-    <description>RSS usage of a process computed via 
-    /proc/pid/stat is not very accurate as it includes shared pages of a
-    process. /proc/pid/smaps provides useful information like
-    Private_Dirty, Private_Clean, Shared_Dirty, Shared_Clean which can be used
-    for computing more accurate RSS. When this flag is enabled, RSS is computed
-    as Min(Shared_Dirty, Pss) + Private_Clean + Private_Dirty. It excludes
-    read-only shared mappings in RSS computation.  
+    <description>RSS usage of a process computed via
+      /proc/pid/stat is not very accurate as it includes shared pages of a
+      process. /proc/pid/smaps provides useful information like
+      Private_Dirty, Private_Clean, Shared_Dirty, Shared_Clean which can be used
+      for computing more accurate RSS. When this flag is enabled, RSS is computed
+      as Min(Shared_Dirty, Pss) + Private_Clean + Private_Dirty. It excludes
+      read-only shared mappings in RSS computation.
     </description>
     <name>yarn.nodemanager.container-monitor.procfs-tree.smaps-based-rss.enabled</name>
     <value>false</value>
@@ -1708,10 +1733,10 @@
 
   <property>
     <description>Defines how often NMs wake up to upload log files.
-    The default value is -1. By default, the logs will be uploaded when
-    the application is finished. By setting this configure, logs can be uploaded
-    periodically when the application is running. The minimum rolling-interval-seconds
-    can be set is 3600.
+      The default value is -1. By default, the logs will be uploaded when
+      the application is finished. By setting this configure, logs can be uploaded
+      periodically when the application is running. The minimum rolling-interval-seconds
+      can be set is 3600.
     </description>
     <name>yarn.nodemanager.log-aggregation.roll-monitoring-interval-seconds</name>
     <value>-1</value>
@@ -1719,8 +1744,8 @@
 
   <property>
     <description>Flag to enable cross-origin (CORS) support in the NM. This flag
-    requires the CORS filter initializer to be added to the filter initializers
-    list in core-site.xml.</description>
+      requires the CORS filter initializer to be added to the filter initializers
+      list in core-site.xml.</description>
     <name>yarn.nodemanager.webapp.cross-origin.enabled</name>
     <value>false</value>
   </property>

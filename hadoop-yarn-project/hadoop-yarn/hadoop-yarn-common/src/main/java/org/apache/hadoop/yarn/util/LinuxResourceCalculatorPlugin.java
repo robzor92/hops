@@ -62,9 +62,9 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   private static final String SWAPFREE_STRING = "SwapFree";
   private static final String INACTIVE_STRING = "Inactive";
   
-  private static String DEVICES_PATH ="/dev";
-  private static final Pattern NVIDIA_GPU_FORMAT = Pattern.compile(
-      "(nvidia\\d)");
+  private GPUManagementLibrary gpuManagementLibrary;
+  private static final String GPU_MANAGEMENT_LIBRARY_CLASSNAME = "io.hops" +
+      ".management.nvidia.NvidiaManagementLibrary";
 
   /**
    * Patterns for parsing /proc/cpuinfo
@@ -109,7 +109,7 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
 
   public LinuxResourceCalculatorPlugin() {
     this(PROCFS_MEMFILE, PROCFS_CPUINFO, PROCFS_STAT,
-        ProcfsBasedProcessTree.JIFFY_LENGTH_IN_MILLIS, DEVICES_PATH);
+        ProcfsBasedProcessTree.JIFFY_LENGTH_IN_MILLIS);
   }
 
   /**
@@ -123,14 +123,12 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   public LinuxResourceCalculatorPlugin(String procfsMemFile,
                                        String procfsCpuFile,
                                        String procfsStatFile,
-                                       long jiffyLengthInMillis,
-                                       String devPath) {
+                                       long jiffyLengthInMillis) {
     this.procfsMemFile = procfsMemFile;
     this.procfsCpuFile = procfsCpuFile;
     this.procfsStatFile = procfsStatFile;
     this.jiffyLengthInMillis = jiffyLengthInMillis;
     this.cpuTimeTracker = new CpuTimeTracker(jiffyLengthInMillis);
-    this.DEVICES_PATH = devPath;
   }
 
   /**
@@ -362,26 +360,30 @@ public class LinuxResourceCalculatorPlugin extends ResourceCalculatorPlugin {
     }
     return overallCpuUsage;
   }
-  
+
   /** {@inheritDoc} */
   @Override
   public int getNumGPUs() {
-    int gpus = 0;
-    File[] devicesDir = null;
     try {
-      devicesDir = FileUtil.listFiles(new File(DEVICES_PATH));
-    } catch (IOException e) {
-      LOG.warn("Could not access file directory on path " + DEVICES_PATH +
-              ", plugin will not be able to identify GPUs");
-    }
-    Matcher mat;
-    for(File f: devicesDir) {
-      mat = NVIDIA_GPU_FORMAT.matcher(f.getName());
-      if(mat.find()) {
-        gpus++;
+      gpuManagementLibrary =
+          GPUManagementLibraryLoader.load(GPU_MANAGEMENT_LIBRARY_CLASSNAME);
+      if(gpuManagementLibrary == null) {
+        return 0;
       }
+      if(!gpuManagementLibrary.initialize()) {
+        LOG.debug("Could not initialize GPU Management Library, offering 0 GPUs");
+        return 0;
+      }
+      int numGPUs = gpuManagementLibrary.getNumGPUs();
+      if(!gpuManagementLibrary.shutDown()) {
+        LOG.debug("Could not shutdown GPU Management Library");
+      }
+      return numGPUs;
+    } catch(GPUManagementLibraryException gpue) {
+      LOG.info("Could not load GPU management library, assuming no GPUs on " +
+          "this machine");
     }
-    return gpus;
+    return 0;
   }
   
   /**
