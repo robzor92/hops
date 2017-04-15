@@ -460,8 +460,7 @@ public class TestCgroupsLCEResourcesHandler {
     File allowFile = new File(cgroupMountDirGPU, "devices.allow");
     Assert.assertTrue(allowFile.exists());
     List<String> allowEntries = FileUtils.readLines(allowFile);
-    
-    System.out.println(allowEntries);
+
     Assert.assertTrue(allowEntries.contains("c " + gpu2 + " rwm"));
     Assert.assertTrue(allowEntries.contains("c " + gpu3 + " rwm"));
     
@@ -491,7 +490,7 @@ public class TestCgroupsLCEResourcesHandler {
     }
     
     @Override
-    public String queryAvailableDevices() {
+    public String queryAvailableDevices(int configuredGPUs) {
       return "195:0 195:1 195:2 195:3 195:4 195:5 195:6 195:7";
     }
   }
@@ -517,7 +516,8 @@ public class TestCgroupsLCEResourcesHandler {
     File mockMtab = createMockMTab(cgroupDir);
     handler.setMtabFile(mockMtab.getAbsolutePath());
     GPUAllocator gpuAllocator = new GPUAllocator(new
-        CustomGPUmanagementLibrary());
+        CustomGPUmanagementLibrary(), 8);
+
     handler.setGPUAllocator(gpuAllocator);
     handler.init(mockLCE, plugin);
     
@@ -543,8 +543,8 @@ public class TestCgroupsLCEResourcesHandler {
     fos3.write(("c 195:4 rwm\n" + "c 195:5 rwm\n").getBytes());
   
     gpuAllocator = new GPUAllocator(new
-        CustomGPUmanagementLibrary());
-    gpuAllocator.initialize();
+        CustomGPUmanagementLibrary(), 8);
+    gpuAllocator.initialize(8);
     handler =
         new CustomCgroupsLCEResourceHandler();
     conf = new YarnConfiguration();
@@ -583,7 +583,7 @@ public class TestCgroupsLCEResourcesHandler {
     CustomCgroupsLCEResourceHandler handler =
             new CustomCgroupsLCEResourceHandler();
     YarnConfiguration conf = new YarnConfiguration();
-    final int numGPUs = 4;
+    final int numGPUs = 8;
     ResourceCalculatorPlugin plugin =
             Mockito.mock(ResourceCalculatorPlugin.class);
     Mockito.doReturn(numGPUs).when(plugin).getNumGPUs();
@@ -599,7 +599,7 @@ public class TestCgroupsLCEResourcesHandler {
     File mockMtab = createMockMTab(cgroupDir);
     
     GPUAllocator gpuAllocator = new GPUAllocator(new
-        CustomGPUmanagementLibrary());
+        CustomGPUmanagementLibrary(), 8);
 
     // setup our handler and call init()
     handler.setMtabFile(mockMtab.getAbsolutePath());
@@ -607,7 +607,6 @@ public class TestCgroupsLCEResourcesHandler {
     handler.init(mockLCE, plugin);
     
     List<String> cgroupDeviceDirEntries = FileUtils.readLines(new File
-
         (cgroupMountDirGPU, "devices.allow"), "UTF-8");
     
 
@@ -615,7 +614,8 @@ public class TestCgroupsLCEResourcesHandler {
       Assert.assertTrue(cgroupDeviceDirEntries.contains(defaultDevice));
     }
     for(Device gpu : gpuAllocator.getAvailableDevices()) {
-      Assert.assertTrue(cgroupDeviceDirEntries.contains("c " + gpu.toString() + " rwm"));
+      Assert.assertTrue(cgroupDeviceDirEntries.contains("c " + gpu.toString()
+          + " rwm"));
     }
     for(Device mandatoryDev : gpuAllocator.getMandatoryDevices()) {
       Assert.assertTrue(cgroupDeviceDirEntries.contains("c " + mandatoryDev.toString() + " rwm"));
