@@ -150,7 +150,11 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
         conf.getInt(
             YarnConfiguration.NM_VCORES, YarnConfiguration.DEFAULT_NM_VCORES);
     
-    int gpus = NodeManagerHardwareUtils.getNodeGPUs(conf);
+    int gpus = 0;
+    if(conf.getBoolean(YarnConfiguration.NM_GPU_RESOURCE_ENABLED,
+        YarnConfiguration.DEFAULT_NM_GPU_RESOURCE_ENABLED)) {
+      gpus = NodeManagerHardwareUtils.getNodeGPUs(conf);
+    }
 
     this.totalResource = Resource.newInstance(memoryMb, virtualCores, gpus);
     metrics.addResource(totalResource);
