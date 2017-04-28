@@ -697,6 +697,8 @@ public class TestRMWebServicesAppsModification extends JerseyTestBase {
     long gpus = maxResources.getLong("gpus");
     assertTrue(memory != 0);
     assertTrue(vCores != 0);
+    //Values configured for min-gpu and max-gpu allocation
+    assertTrue(gpus == 0 || gpus == 8);
     return appId;
   }
   
@@ -798,7 +800,7 @@ public class TestRMWebServicesAppsModification extends JerseyTestBase {
     appInfo.getContainerLaunchContextInfo().setCredentials(credentials);
     appInfo.getResource().setMemory(1024);
     appInfo.getResource().setvCores(1);
-    appInfo.getResource().setGpus(1);
+    appInfo.getResource().setGpus(0);
     appInfo.setApplicationTags(tags);
     
     ClientResponse response =
@@ -912,12 +914,27 @@ public class TestRMWebServicesAppsModification extends JerseyTestBase {
         rm.getConfig().getInt(
             YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_GPUS,
             YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_GPUS) +
-            2);
+            1);
     appInfo.getResource().setMemory(CONTAINER_MB);
     response =
         this.constructWebResource(urlPath).accept(acceptMedia)
             .entity(appInfo, contentMedia).post(ClientResponse.class);
     validateResponseStatus(response, Status.BAD_REQUEST);
+  
+    appInfo.getResource().setGpus(
+        rm.getConfig().getInt(
+            YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_GPUS,
+            YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_GPUS) +
+            1);
+    
+    appInfo.getResource().setvCores(1);
+  
+    response =
+        this.constructWebResource(urlPath).accept(acceptMedia)
+            .entity(appInfo, contentMedia).post(ClientResponse.class);
+  
+    validateResponseStatus(response, Status.BAD_REQUEST);
+    
   }
   
   @Test
