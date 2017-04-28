@@ -25,7 +25,6 @@ import java.util.Random;
 
 
 import org.apache.hadoop.fs.Path;
-import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
@@ -68,7 +67,8 @@ public class TestLinuxResourceCalculatorPlugin {
     FAKE_CPUFILE = TEST_ROOT_DIR + File.separator + "CPUINFO_" + randomNum;
     FAKE_STATFILE = TEST_ROOT_DIR + File.separator + "STATINFO_" + randomNum;
     plugin = new FakeLinuxResourceCalculatorPlugin(FAKE_MEMFILE, FAKE_CPUFILE,
-                                                   FAKE_STATFILE, FAKE_JIFFY_LENGTH);
+                                                   FAKE_STATFILE,
+                                                   FAKE_JIFFY_LENGTH);
   }
   static final String MEMINFO_FORMAT = 
 	  "MemTotal:      %d kB\n" +
@@ -139,10 +139,6 @@ public class TestLinuxResourceCalculatorPlugin {
     "processes 26414943\n" +
     "procs_running 1\n" +
     "procs_blocked 0\n";
-
-  static final String[] NVIDIA_DEVICE_FILES = new String[] {
-          "nvidia0", "nvidia1", "nvidia2", "nvidia3", "nvidia4", "nvidia5", "nvidia6", "nvidia7"
-  };
   
   /**
    * Test parsing /proc/stat and /proc/cpuinfo
