@@ -172,8 +172,9 @@ public class TestGPUAllocator {
         ContainerId secondContainerId = ContainerId.fromString("container_1_1_1_2");
         HashMap<String, HashSet<Device>> secondAllocation = customGPUAllocator.allocate(secondContainerId.toString(), 5);
     }
-
-    //The GPU allocator should never be called when 0 gpus are to be allocated, but further code changes may introduce it
+    
+    //Makes sure that if no GPU is requested, all existing GPUs still need to
+    // be blocked
     @Test
     public void testZeroGPURequestedZeroGPUAllocated() throws IOException {
         CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
@@ -181,8 +182,10 @@ public class TestGPUAllocator {
         customGPUAllocator.initialize(8);
 
         ContainerId firstContainerId = ContainerId.fromString("container_1_1_1_1");
-        HashMap<String, HashSet<Device>> firstAllocation = customGPUAllocator.allocate(firstContainerId.toString(), 0);
+        HashMap<String, HashSet<Device>> allocation = customGPUAllocator
+            .allocate(firstContainerId.toString(), 0);
 
-        Assert.assertEquals(8, customGPUAllocator.getAvailableDevices().size());
+        Assert.assertTrue(allocation.get("deny").containsAll
+            (customGPUAllocator.getAvailableDevices()));
     }
 }

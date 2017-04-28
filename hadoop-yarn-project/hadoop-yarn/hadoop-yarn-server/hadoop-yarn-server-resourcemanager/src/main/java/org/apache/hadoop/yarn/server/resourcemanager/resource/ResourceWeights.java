@@ -26,33 +26,26 @@ import org.apache.hadoop.util.StringUtils;
 @Evolving
 public class ResourceWeights {
   public static final ResourceWeights NEUTRAL = new ResourceWeights(1.0f);
-  
+
   private float[] weights = new float[ResourceType.values().length];
-  
+
   public ResourceWeights(float memoryWeight, float cpuWeight) {
     weights[ResourceType.MEMORY.ordinal()] = memoryWeight;
     weights[ResourceType.CPU.ordinal()] = cpuWeight;
   }
-  
-  public ResourceWeights(float memoryWeight, float cpuWeight, float gpuWeight) {
-    weights[ResourceType.MEMORY.ordinal()] = memoryWeight;
-    weights[ResourceType.CPU.ordinal()] = cpuWeight;
-    weights[ResourceType.GPU.ordinal()] = gpuWeight;
-  }
-  
-  
+
   public ResourceWeights(float weight) {
     setWeight(weight);
   }
-  
+
   public ResourceWeights() { }
-  
+
   public void setWeight(float weight) {
     for (int i = 0; i < weights.length; i++) {
       weights[i] = weight;
     }
   }
-  
+
   public void setWeight(ResourceType resourceType, float weight) {
     weights[resourceType.ordinal()] = weight;
   }
