@@ -193,7 +193,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
         ArrayList<String> cgroupKVs = new ArrayList<String>();
         cgroupKVs.add(CONTROLLER_CPU + "=" + cgroupMountPath + "/" +
                 CONTROLLER_CPU);
-        if(gpuSupportEnabled) {
+        if(isGpuSupportEnabled()) {
           cgroupKVs.add(CONTROLLER_DEVICES + "=" + cgroupMountPath + "/" +
                   CONTROLLER_DEVICES);
         }
@@ -474,9 +474,10 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
       }
     }
     
-    /* Deny access to all GPU devices which the container should not
-    have access to. A container making use of only CPUs should not be able to
-    access any GPUs.
+    /*
+    Give access only to requested number of GPUs.
+    Deny access to all GPU devices except for those that have been allocated.
+    A container making use of 0 GPUs should not be able to access any GPUs.
      */
 
     if(isGpuSupportEnabled()) {
@@ -494,21 +495,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
         updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_DENY,
                 deviceEntry);
       }
-
-      //read cgroups file - for debug
-      FileInputStream fis = new FileInputStream(pathForCgroup
-              (CONTROLLER_DEVICES, containerName) + "/devices.list");
-      BufferedReader in = null;
-      in = new BufferedReader(new InputStreamReader(fis, "UTF-8"));
-
-      for (String str = in.readLine(); str != null;
-
-           str = in.readLine()) {
-        LOG.info(str);
-      }
-
     }
-
   }
 
   private void clearLimits(ContainerId containerId) {
@@ -558,7 +545,7 @@ public class CgroupsLCEResourcesHandler implements LCEResourcesHandler {
 
   @Override
   public void recoverDeviceControlSystem(ContainerId containerId) {
-    if(!gpuSupportEnabled) {
+    if(!isGpuSupportEnabled()) {
       return;
     }
 
