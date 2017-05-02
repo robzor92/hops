@@ -442,10 +442,10 @@ public class TestCgroupsLCEResourcesHandler {
 
     Assert.assertTrue(gpuAllocator.getAvailableDevices().size() == 6);
     //SECOND ALLOCATION
-    HashMap <String, HashSet<Device>> deviceAllocation1 = gpuAllocator.allocate
+    HashSet<Device> deviceAllocation1 = gpuAllocator.allocate
         ("test_container", 2);
     
-    HashSet<Device> deniedDevices1 = deviceAllocation1.get("deny");
+    HashSet<Device> deniedDevices1 = deviceAllocation1;
     //gpu0 and gpu1 already allocated
     Assert.assertTrue(deniedDevices1.contains(gpu0));
     Assert.assertTrue(deniedDevices1.contains(gpu1));
@@ -458,10 +458,10 @@ public class TestCgroupsLCEResourcesHandler {
   
     handler.postExecute(id);
   
-    HashMap <String, HashSet<Device>> deviceAllocation2 = gpuAllocator.allocate
+    HashSet<Device> deviceAllocation2 = gpuAllocator.allocate
         ("test_container2", 3);
     
-    HashSet<Device> deniedDevices2 = deviceAllocation2.get("deny");
+    HashSet<Device> deniedDevices2 = deviceAllocation2;
     Assert.assertFalse(deniedDevices2.contains(gpu0)); //allocated in first call
     Assert.assertFalse(deniedDevices2.contains(gpu1));
     Assert.assertTrue(deniedDevices2.contains(gpu2));

@@ -66,28 +66,32 @@ public class TestGPUAllocator {
         int numInitialAvailableGPUs = initialAvailableGPUs.size();
 
         ContainerId firstId = ContainerId.fromString("container_1_1_1_1");
-        HashMap<String, HashSet<Device>> firstAllocation = customGPUAllocator.allocate(firstId.toString(), 4);
+        HashSet<Device> firstAllocation = customGPUAllocator.allocate(firstId.toString(), 4);
         HashSet<Device> currentlyAvailableDevices = new HashSet<>(customGPUAllocator.getAvailableDevices());
         Assert.assertEquals(numInitialAvailableGPUs - 4, currentlyAvailableDevices.size());
 
-        HashSet<Device> deniedGPUs = firstAllocation.get("deny");
-        Assert.assertTrue(currentlyAvailableDevices.equals(deniedGPUs));
+        Assert.assertTrue(currentlyAvailableDevices.equals(firstAllocation));
 
         ContainerId secondId = ContainerId.fromString("container_1_1_1_2");
-        HashMap<String, HashSet<Device>> secondAllocation = customGPUAllocator.allocate(secondId.toString(), 4);
-        Assert.assertEquals(4, firstAllocation.get("allow").size());
-        Assert.assertEquals(4, firstAllocation.get("deny").size());
-        Assert.assertEquals(4, secondAllocation.get("allow").size());
-        Assert.assertEquals(4, secondAllocation.get("deny").size());
+        HashSet<Device> secondAllocation = customGPUAllocator.allocate(secondId.toString(), 4);
+
+        Assert.assertEquals(4, firstAllocation.size());
+
+        Assert.assertEquals(4, secondAllocation.size());
         Assert.assertEquals(numInitialAvailableGPUs - 8, customGPUAllocator.getAvailableDevices().size());
 
         customGPUAllocator.release(firstId.toString());
         Assert.assertEquals(numInitialAvailableGPUs - 4, customGPUAllocator.getAvailableDevices().size());
 
-        Assert.assertEquals(0, Sets.intersection(firstAllocation.get("allow"), secondAllocation.get("allow")).size());
         customGPUAllocator.release(secondId.toString());
 
         Assert.assertEquals(numInitialAvailableGPUs, customGPUAllocator.getAvailableDevices().size());
+    
+        ContainerId thirdId = ContainerId.fromString("container_1_1_1_2");
+        HashSet<Device> thirdAllocation = customGPUAllocator.allocate(thirdId
+            .toString(), 2);
+        Assert.assertEquals(6, thirdAllocation.size());
+        Assert.assertEquals(6, customGPUAllocator.getAvailableDevices().size());
     }
 
     @Test
@@ -134,14 +138,14 @@ public class TestGPUAllocator {
         Assert.assertFalse(availableGPUsAfterSecondRecovery.contains(device3));
 
         ContainerId newContainerId = ContainerId.fromString("container_1_1_1_3");
-        HashMap<String, HashSet<Device>> allocation = customGPUAllocator.allocate(newContainerId.toString(), 4);
-        Assert.assertEquals(4, allocation.get("deny").size());
+        HashSet<Device> allocation = customGPUAllocator.allocate(newContainerId.toString(), 4);
+        Assert.assertEquals(4, allocation.size());
         HashSet<Device> alreadyAllocatedDevices = new HashSet<>();
         alreadyAllocatedDevices.add(device0);
         alreadyAllocatedDevices.add(device1);
         alreadyAllocatedDevices.add(device2);
         alreadyAllocatedDevices.add(device3);
-        Assert.assertTrue(allocation.get("deny").containsAll(alreadyAllocatedDevices));
+        Assert.assertTrue(allocation.containsAll(alreadyAllocatedDevices));
 
         HashSet<Device> allowedDevices = new HashSet<>();
         Device device4 = new Device(195, 4);
@@ -153,8 +157,6 @@ public class TestGPUAllocator {
         allowedDevices.add(device5);
         allowedDevices.add(device6);
         allowedDevices.add(device7);
-        Assert.assertEquals(4, allocation.get("allow").size());
-        Assert.assertTrue(allocation.get("allow").containsAll(allowedDevices));
         Assert.assertTrue(customGPUAllocator.getAvailableDevices().isEmpty());
     }
 
@@ -166,11 +168,11 @@ public class TestGPUAllocator {
         customGPUAllocator.initialize(8);
 
         ContainerId firstContainerId = ContainerId.fromString("container_1_1_1_1");
-        HashMap<String, HashSet<Device>> firstAllocation = customGPUAllocator.allocate(firstContainerId.toString(), 4);
+        HashSet<Device> firstAllocation = customGPUAllocator.allocate(firstContainerId.toString(), 4);
 
         //Should throw IOException
         ContainerId secondContainerId = ContainerId.fromString("container_1_1_1_2");
-        HashMap<String, HashSet<Device>> secondAllocation = customGPUAllocator.allocate(secondContainerId.toString(), 5);
+        HashSet<Device> secondAllocation = customGPUAllocator.allocate(secondContainerId.toString(), 5);
     }
     
     //Makes sure that if no GPU is requested, all existing GPUs still need to
@@ -182,10 +184,10 @@ public class TestGPUAllocator {
         customGPUAllocator.initialize(8);
 
         ContainerId firstContainerId = ContainerId.fromString("container_1_1_1_1");
-        HashMap<String, HashSet<Device>> allocation = customGPUAllocator
+        HashSet<Device> allocation = customGPUAllocator
             .allocate(firstContainerId.toString(), 0);
 
-        Assert.assertTrue(allocation.get("deny").containsAll
+        Assert.assertTrue(allocation.containsAll
             (customGPUAllocator.getAvailableDevices()));
     }
 }
