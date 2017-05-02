@@ -93,13 +93,14 @@ public class NodeManagerHardwareUtils {
   public static int getNodeGPUs(ResourceCalculatorPlugin plugin,
       Configuration conf) {
     int discoveredGPUs = plugin.getNumGPUs();
-    int configuredGPUs = Math.min(conf.getInt(YarnConfiguration.NM_GPUS,
-        YarnConfiguration.DEFAULT_NM_GPUS), discoveredGPUs);
+    int configuredGPUs = conf.getInt(YarnConfiguration.NM_GPUS,
+        YarnConfiguration.DEFAULT_NM_GPUS);
     if(configuredGPUs > discoveredGPUs) {
-      Log.info("Could not find " + configuredGPUs + " gpus as configured." +
+      Log.warn("Could not find " + configuredGPUs + " gpus as configured." +
           " Only discovered " + discoveredGPUs + " gpus" );
     }
-    return configuredGPUs;
+    int numGPUs = Math.min(discoveredGPUs, configuredGPUs);
+    return numGPUs;
   }
   
   public static int getNodeGPUs(Configuration conf) {

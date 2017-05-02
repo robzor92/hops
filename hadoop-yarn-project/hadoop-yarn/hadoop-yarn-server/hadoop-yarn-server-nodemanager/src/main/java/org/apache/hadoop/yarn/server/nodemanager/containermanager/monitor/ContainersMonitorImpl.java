@@ -132,11 +132,14 @@ public class ContainersMonitorImpl extends AbstractService implements
         YarnConfiguration.DEFAULT_NM_VCORES);
 
     int configuredGPUsForContainers = 0;
-    if(conf.getBoolean(YarnConfiguration.NM_GPU_RESOURCE_ENABLED, YarnConfiguration.DEFAULT_NM_GPU_RESOURCE_ENABLED)) {
+    boolean gpuEnabled = conf.getBoolean(YarnConfiguration
+        .NM_GPU_RESOURCE_ENABLED, YarnConfiguration
+        .DEFAULT_NM_GPU_RESOURCE_ENABLED);
+    if(gpuEnabled) {
       configuredGPUsForContainers = NodeManagerHardwareUtils.getNodeGPUs(conf);
     }
 
-
+    
     // Setting these irrespective of whether checks are enabled. Required in
     // the UI.
     // ///////// Physical memory configuration //////

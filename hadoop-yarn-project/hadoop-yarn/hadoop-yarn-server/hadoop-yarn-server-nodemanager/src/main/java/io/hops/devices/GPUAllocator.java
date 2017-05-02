@@ -3,18 +3,14 @@ package io.hops.devices;
 
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import io.hops.GPUManagementLibrary;
 import io.hops.GPUManagementLibraryLoader;
 import io.hops.exceptions.GPUManagementLibraryException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.yarn.api.records.ContainerId;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -173,39 +169,43 @@ public class GPUAllocator {
    *
    * @param containerName the container to allocate gpus for
    * @param gpus the number of gpus to allocate for container
-   * @return HashMap containing mapping for "allow" and "deny" corresponding to
-   * which gpu devices should be given access to and which should be denied
+   * @return HashSet containing all GPUs to deny access to, if allocating one
+   * GPU then all except the allocated GPU will be returned
    * @throws IOException
    */
-  public synchronized HashMap<String, HashSet<Device>> allocate(String
+  public synchronized HashSet<Device> allocate(String
       containerName, int gpus)
       throws IOException {
-    LOG.info("Trying to allocate " + gpus + " gpus");
-    LOG.info("Currently unallocated gpus: " + availableDevices.toString());
+    LOG.info("Trying to allocate " + gpus + " GPUs");
+    LOG.info("Currently unallocated GPUs: " + availableDevices.toString());
     HashSet<Device> currentlyAllocatedGPUs = getAllocatedGPUs();
-    LOG.info("Currently allocated gpus: " + currentlyAllocatedGPUs);
+    LOG.info("Currently allocated GPUs: " + currentlyAllocatedGPUs);
     
     if(availableDevices.size() >= gpus) {
-      //Containing entries for GPUs to allow or deny
-      HashMap<String, HashSet<Device>> cGroupDeviceMapping = new HashMap<>();
+      //containing entries for GPUs to deny access to
+      HashSet<Device> devicesToDeny = new HashSet<>();
       
-      //deny devices already in use
-      cGroupDeviceMapping.put("deny", currentlyAllocatedGPUs);
+      //need to deny access to all currently allocated devices
+      devicesToDeny.addAll(currentlyAllocatedGPUs);
       
+      //selection method for determining which available GPUs to allocate
       HashSet<Device> deviceAllocation = selectDevicesToAllocate(gpus);
+  
+      //remove allocated GPUs from available
+      availableDevices.removeAll(deviceAllocation);
       
-      LOG.info("Gpus to allocate for " + containerName + " = " +
+      LOG.debug("GPUs to allocate for " + containerName + " = " +
           deviceAllocation);
       
+      //save the allocated GPUs
       containerDeviceAllocation.put(containerName, deviceAllocation);
-      //only allow access to allocated GPUs
-      cGroupDeviceMapping.put("allow", deviceAllocation);
       
       //deny remaining available devices
-      cGroupDeviceMapping.get("deny").addAll(availableDevices);
-      LOG.info("Gpus to deny for " + containerName + " = " +
-          cGroupDeviceMapping.get("deny"));
-      return cGroupDeviceMapping;
+      devicesToDeny.addAll(availableDevices);
+      
+      LOG.debug("GPUs to deny for " + containerName + " = " +
+          devicesToDeny);
+      return devicesToDeny;
       
     } else {
       throw new IOException("Container " + containerName + " requested " +
@@ -222,7 +222,7 @@ public class GPUAllocator {
    * TODO: such as "Random GPU", "Slowest GPU first" or something
    * TODO: actually useful like topology-based selection with GPUs
    * TODO: interconnected using NVLink.
-   * @param gpus
+   * @param gpus number of GPUs to select for allocation
    * @return set of GPU devices that have been allocated
    */
   private synchronized HashSet<Device> selectDevicesToAllocate(int gpus) {
@@ -241,7 +241,6 @@ public class GPUAllocator {
     while(minDeviceNumItr.hasNext() && gpus != 0) {
       int deviceNum = minDeviceNumItr.next();
       Device allocatedGPU = new Device(NVIDIA_GPU_MAJOR_DEVICE_NUMBER, deviceNum);
-      availableDevices.remove(allocatedGPU);
       deviceAllocation.add(allocatedGPU);
       gpus--;
     }
@@ -260,19 +259,31 @@ public class GPUAllocator {
         get(containerName);
     availableDevices.addAll(deviceAllocation);
     containerDeviceAllocation.remove(containerName);
+    LOG.info("Releasing GPUs " + deviceAllocation + " for container " + containerName);
   }
   
   /**
-   * Given the containerId and the Cgroup contents for devices.allow
+   * Given the containerId and the Cgroup contents for devices.list
    * extract allocated GPU devices
    * @param devicesAllowStr
    */
   public synchronized void recoverAllocation(String containerId, String
       devicesAllowStr) {
     HashSet<Device> allocatedGPUsForContainer = findGPUDevices(devicesAllowStr);
+    if(allocatedGPUsForContainer.isEmpty()) {
+      return;
+    }
     availableDevices.removeAll(allocatedGPUsForContainer);
     containerDeviceAllocation.put(containerId.toString(),
         allocatedGPUsForContainer);
+    LOG.debug("Recovering " + allocatedGPUsForContainer.size() + "  GPUs for" +
+        " " +
+        "container " + containerId);
+    LOG.debug("Available devices after container " + containerId + " " +
+        "recovery" +
+        " = " + availableDevices.size());
+    LOG.debug("So far recovered allocations = " + containerDeviceAllocation
+        .size());
   }
   
   /* We are looking for entries of the form:
@@ -287,14 +298,15 @@ public class GPUAllocator {
   /**
    * Find GPU devices in the contents of the devices.list file
    * This method is used in the recovery process and will only filter out the
-   * NVIDIA GPUs (major device number 195)
-   * @param devicesAllowStr
+   * NVIDIA GPUs (major device number 195), some NVIDIA device files have 195
+   * major device number so we need to make sure these are not included as GPUs
+   * @param devicesWhitelistStr
    * @return
    */
-  private HashSet<Device> findGPUDevices(String devicesAllowStr) {
+  private HashSet<Device> findGPUDevices(String devicesWhitelistStr) {
     HashSet<Device> devices = new HashSet<>();
     
-    Matcher m = DEVICES_LIST_FORMAT.matcher(devicesAllowStr);
+    Matcher m = DEVICES_LIST_FORMAT.matcher(devicesWhitelistStr);
     
     while (m.find()) {
       String majorMinorDeviceNumber = m.group(2);
@@ -302,7 +314,11 @@ public class GPUAllocator {
       int majorDeviceNumber = Integer.parseInt(majorMinorPair[0]);
       if(majorDeviceNumber == NVIDIA_GPU_MAJOR_DEVICE_NUMBER) {
         int minorDeviceNumber = Integer.parseInt(majorMinorPair[1]);
-        devices.add(new Device(majorDeviceNumber, minorDeviceNumber));
+        Device device = new Device(majorDeviceNumber, minorDeviceNumber);
+        //If not actually a GPU (but same major device number), do not return it
+        if(!getMandatoryDevices().contains(device)) {
+          devices.add(new Device(majorDeviceNumber, minorDeviceNumber));
+        }
       }
     }
     return devices;
