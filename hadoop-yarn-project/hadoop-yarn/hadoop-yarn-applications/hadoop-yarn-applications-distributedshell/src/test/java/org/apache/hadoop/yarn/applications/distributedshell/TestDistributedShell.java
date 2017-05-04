@@ -165,13 +165,9 @@ public class TestDistributedShell {
         "512",
         "--master_vcores",
         "2",
-        "--master_gpus",
-        "0",
         "--container_memory",
         "128",
         "--container_vcores",
-        "1",
-        "--container_gpus",
         "1"
     };
     if (haveDomain) {
@@ -479,14 +475,10 @@ public class TestDistributedShell {
         "512",
         "--master_vcores",
         "2",
-        "--master_gpus",
-        "0",
         "--container_memory",
         "128",
         "--container_vcores",
-        "1",
-        "--container_gpus",
-        "0"
+        "1"
     };
 
     //Before run the DS, the default the log level is INFO
@@ -527,14 +519,10 @@ public class TestDistributedShell {
         "512",
         "--master_vcores",
         "2",
-        "--master_gpus",
-        "0",
         "--container_memory",
         "128",
         "--container_vcores",
-        "1",
-        "--container_gpus",
-        "0"
+        "1"
     };
 
     LOG.info("Initializing DS Client");
@@ -565,14 +553,10 @@ public class TestDistributedShell {
         "512",
         "--master_vcores",
         "2",
-        "--master_gpus",
-        "0",
         "--container_memory",
         "128",
         "--container_vcores",
-        "1",
-        "--container_gpus",
-        "0"
+        "1"
     };
 
     LOG.info("Initializing DS Client");
@@ -617,14 +601,10 @@ public class TestDistributedShell {
         "512",
         "--master_vcores",
         "2",
-        "--master_gpus",
-        "0",
         "--container_memory",
         "128",
         "--container_vcores",
-        "1",
-        "--container_gpus",
-        "0"
+        "1"
     };
 
     LOG.info("Initializing DS Client");

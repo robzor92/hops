@@ -82,7 +82,7 @@ public class AppInfo {
   protected String amHostHttpAddress;
   protected int allocatedMB;
   protected int allocatedVCores;
-  protected int allocatedGpus;
+  protected int allocatedGPUs;
   protected int runningContainers;
   protected long memorySeconds;
   protected long vcoreSeconds;
@@ -91,7 +91,7 @@ public class AppInfo {
   // preemption info fields
   protected int preemptedResourceMB;
   protected int preemptedResourceVCores;
-  protected int preemptedResourceGpus;
+  protected int preemptedResourceGPUs;
   protected int numNonAMContainerPreempted;
   protected int numAMContainerPreempted;
   
@@ -163,7 +163,7 @@ public class AppInfo {
             Resource usedResources = resourceReport.getUsedResources();
             allocatedMB = usedResources.getMemory();
             allocatedVCores = usedResources.getVirtualCores();
-            allocatedGpus = usedResources.getGPUs();
+            allocatedGPUs = usedResources.getGPUs();
             runningContainers = resourceReport.getNumUsedContainers();
           }
           resourceRequests =
@@ -182,7 +182,7 @@ public class AppInfo {
           appMetrics.getNumNonAMContainersPreempted();
       preemptedResourceVCores =
           appMetrics.getResourcePreempted().getVirtualCores();
-      preemptedResourceGpus =
+      preemptedResourceGPUs =
           appMetrics.getResourcePreempted().getGPUs();
       memorySeconds = appMetrics.getMemorySeconds();
       vcoreSeconds = appMetrics.getVcoreSeconds();
@@ -294,8 +294,8 @@ public class AppInfo {
     return this.allocatedVCores;
   }
   
-  public int getAllocatedGpus() {
-    return this.allocatedGpus;
+  public int getAllocatedGPUs() {
+    return this.allocatedGPUs;
   }
   
   public int getPreemptedMB() {
@@ -306,8 +306,8 @@ public class AppInfo {
     return preemptedResourceVCores;
   }
   
-  public int getPreemptedGpus() {
-    return preemptedResourceGpus;
+  public int getPreemptedGPUs() {
+    return preemptedResourceGPUs;
   }
   
   
