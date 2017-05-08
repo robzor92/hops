@@ -251,7 +251,7 @@ public class TestCapacityScheduler {
       // Exception is expected.
       assertTrue("The thrown exception is not the expected one.",
           e.getMessage().startsWith(
-              "Invalid resource scheduler gpu"));
+              "Invalid resource scheduler GPUs"));
     }
   }
 

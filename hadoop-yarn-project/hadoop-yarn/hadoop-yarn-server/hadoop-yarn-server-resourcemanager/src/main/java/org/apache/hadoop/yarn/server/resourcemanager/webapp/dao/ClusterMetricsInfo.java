@@ -45,9 +45,9 @@ public class ClusterMetricsInfo {
   protected long availableVirtualCores;
   protected long allocatedVirtualCores;
 
-  protected long reservedGpus;
-  protected long availableGpus;
-  protected long allocatedGpus;
+  protected long reservedGPUs;
+  protected long availableGPUs;
+  protected long allocatedGPUs;
 
   protected int containersAllocated;
   protected int containersReserved;
@@ -55,7 +55,7 @@ public class ClusterMetricsInfo {
 
   protected long totalMB;
   protected long totalVirtualCores;
-  protected long totalGpus;
+  protected long totalGPUs;
   protected int totalNodes;
   protected int lostNodes;
   protected int unhealthyNodes;
@@ -86,9 +86,9 @@ public class ClusterMetricsInfo {
     this.availableVirtualCores = metrics.getAvailableVirtualCores();
     this.allocatedVirtualCores = metrics.getAllocatedVirtualCores();
 
-    this.reservedGpus = metrics.getReservedGPUs();
-    this.availableGpus = metrics.getAvailableGPUs();
-    this.allocatedGpus = metrics.getAllocatedGPUs();
+    this.reservedGPUs = metrics.getReservedGPUs();
+    this.availableGPUs = metrics.getAvailableGPUs();
+    this.allocatedGPUs = metrics.getAllocatedGPUs();
 
     this.containersAllocated = metrics.getAllocatedContainers();
     this.containersPending = metrics.getPendingContainers();
@@ -96,7 +96,7 @@ public class ClusterMetricsInfo {
 
     this.totalMB = availableMB + allocatedMB;
     this.totalVirtualCores = availableVirtualCores + allocatedVirtualCores;
-    this.totalGpus = availableGpus + allocatedGpus;
+    this.totalGPUs = availableGPUs + allocatedGPUs;
     this.activeNodes = clusterMetrics.getNumActiveNMs();
     this.lostNodes = clusterMetrics.getNumLostNMs();
     this.unhealthyNodes = clusterMetrics.getUnhealthyNMs();
@@ -154,16 +154,16 @@ public class ClusterMetricsInfo {
     return this.allocatedVirtualCores;
   }
 
-  public long getReservedGpus() {
-    return this.reservedGpus;
+  public long getReservedGPUs() {
+    return this.reservedGPUs;
   }
 
-  public long getAvailableGpus() {
-    return this.availableGpus;
+  public long getAvailableGPUs() {
+    return this.availableGPUs;
   }
 
-  public long getAllocatedGpus() {
-    return this.allocatedGpus;
+  public long getAllocatedGPUs() {
+    return this.allocatedGPUs;
   }
 
   public int getContainersAllocated() {
@@ -186,8 +186,8 @@ public class ClusterMetricsInfo {
     return this.totalVirtualCores;
   }
 
-  public long getTotalGpus() {
-    return this.totalGpus;
+  public long getTotalGPUs() {
+    return this.totalGPUs;
   }
 
   public int getTotalNodes() {

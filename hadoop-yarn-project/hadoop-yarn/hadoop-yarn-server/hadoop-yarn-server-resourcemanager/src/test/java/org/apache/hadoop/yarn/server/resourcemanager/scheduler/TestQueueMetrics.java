@@ -364,20 +364,20 @@ public class TestQueueMetrics {
     MetricsRecordBuilder rb = getMetrics(source);
     assertGauge("AllocatedMB", allocatedMB, rb);
     assertGauge("AllocatedVCores", allocatedCores, rb);
-    assertGauge("AllocatedGpus", allocatedGCores, rb);
+    assertGauge("AllocatedGPUs", allocatedGCores, rb);
     assertGauge("AllocatedContainers", allocCtnrs, rb);
     assertCounter("AggregateContainersAllocated", aggreAllocCtnrs, rb);
     assertCounter("AggregateContainersReleased", aggreReleasedCtnrs, rb);
     assertGauge("AvailableMB", availableMB, rb);
     assertGauge("AvailableVCores", availableCores, rb);
-    assertGauge("AvailableGpus", availableGCores, rb);
+    assertGauge("AvailableGPUs", availableGCores, rb);
     assertGauge("PendingMB", pendingMB, rb);
     assertGauge("PendingVCores", pendingCores, rb);
-    assertGauge("PendingGpus", pendingGCores, rb);
+    assertGauge("PendingGPUs", pendingGCores, rb);
     assertGauge("PendingContainers", pendingCtnrs, rb);
     assertGauge("ReservedMB", reservedMB, rb);
     assertGauge("ReservedVCores", reservedCores, rb);
-    assertGauge("ReservedGpus", reservedGCores, rb);
+    assertGauge("ReservedGPUs", reservedGCores, rb);
     assertGauge("ReservedContainers", reservedCtnrs, rb);
   }
   
