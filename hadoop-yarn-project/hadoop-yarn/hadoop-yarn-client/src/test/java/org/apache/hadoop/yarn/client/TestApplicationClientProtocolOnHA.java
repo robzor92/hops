@@ -178,7 +178,6 @@ public class TestApplicationClientProtocolOnHA extends ProtocolHATestBase {
     Resource capability = Records.newRecord(Resource.class);
     capability.setMemory(10);
     capability.setVirtualCores(1);
-    capability.setGPUs(1);
     appContext.setResource(capability);
     ApplicationId appId = client.submitApplication(appContext);
     Assert.assertTrue(getActiveRM().getRMContext().getRMApps()

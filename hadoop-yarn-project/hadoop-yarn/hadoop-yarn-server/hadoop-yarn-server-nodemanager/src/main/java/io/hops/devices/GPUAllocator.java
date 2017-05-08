@@ -257,9 +257,16 @@ public class GPUAllocator {
   public synchronized void release(String containerName) {
     HashSet<Device> deviceAllocation = containerDeviceAllocation.
         get(containerName);
-    availableDevices.addAll(deviceAllocation);
-    containerDeviceAllocation.remove(containerName);
-    LOG.info("Releasing GPUs " + deviceAllocation + " for container " + containerName);
+    if(containerDeviceAllocation != null) {
+      containerDeviceAllocation.remove(containerName);
+      availableDevices.addAll(deviceAllocation);
+      LOG.info("Releasing GPUs " + deviceAllocation + " for container " + containerName);
+    }
+    else {
+      LOG.error("GPUAllocator may be in an erroneous state, it tried to " +
+          "release a GPU allocation for container " + containerName + " where" +
+          " no previous GPU allocation exists");
+    }
   }
   
   /**
@@ -274,8 +281,7 @@ public class GPUAllocator {
       return;
     }
     availableDevices.removeAll(allocatedGPUsForContainer);
-    containerDeviceAllocation.put(containerId.toString(),
-        allocatedGPUsForContainer);
+    containerDeviceAllocation.put(containerId, allocatedGPUsForContainer);
     LOG.debug("Recovering " + allocatedGPUsForContainer.size() + "  GPUs for" +
         " " +
         "container " + containerId);

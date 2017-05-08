@@ -1,20 +1,20 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package org.apache.hadoop.yarn.server.resourcemanager.webapp;
 
@@ -51,17 +51,17 @@ public class MetricsOverviewTable extends HtmlBlock {
   protected void render(Block html) {
     //Yes this is a hack, but there is no other way to insert
     //CSS in the correct spot
-    html.style(".metrics {margin-bottom:5px}");
-
-    ClusterMetricsInfo clusterMetrics =
-        new ClusterMetricsInfo(this.rm);
-
+    html.style(".metrics {margin-bottom:5px}"); 
+    
+    ClusterMetricsInfo clusterMetrics = 
+ new ClusterMetricsInfo(this.rm);
+    
     DIV<Hamlet> div = html.div().$class("metrics");
-
+    
     div.h3("Cluster Metrics").
-        table("#metricsoverview").
-        thead().$class("ui-widget-header").
-        tr().
+    table("#metricsoverview").
+    thead().$class("ui-widget-header").
+      tr().
         th().$class("ui-state-default")._("Apps Submitted")._().
         th().$class("ui-state-default")._("Apps Pending")._().
         th().$class("ui-state-default")._("Apps Running")._().
@@ -73,27 +73,27 @@ public class MetricsOverviewTable extends HtmlBlock {
         th().$class("ui-state-default")._("VCores Used")._().
         th().$class("ui-state-default")._("VCores Total")._().
         th().$class("ui-state-default")._("VCores Reserved")._().
-        th().$class("ui-state-default")._("Gpus Used")._().
-        th().$class("ui-state-default")._("Gpus Total")._().
-        th().$class("ui-state-default")._("Gpus Reserved")._().
+        th().$class("ui-state-default")._("GPUs Used")._().
+        th().$class("ui-state-default")._("GPUs Total")._().
+        th().$class("ui-state-default")._("GPUs Reserved")._().
         th().$class("ui-state-default")._("Active Nodes")._().
         th().$class("ui-state-default")._("Decommissioned Nodes")._().
         th().$class("ui-state-default")._("Lost Nodes")._().
         th().$class("ui-state-default")._("Unhealthy Nodes")._().
         th().$class("ui-state-default")._("Rebooted Nodes")._().
-        _().
-        _().
-        tbody().$class("ui-widget-content").
-        tr().
+      _().
+    _().
+    tbody().$class("ui-widget-content").
+      tr().
         td(String.valueOf(clusterMetrics.getAppsSubmitted())).
         td(String.valueOf(clusterMetrics.getAppsPending())).
         td(String.valueOf(clusterMetrics.getAppsRunning())).
         td(
             String.valueOf(
-                clusterMetrics.getAppsCompleted() +
-                    clusterMetrics.getAppsFailed() + clusterMetrics.getAppsKilled()
-            )
-        ).
+                clusterMetrics.getAppsCompleted() + 
+                clusterMetrics.getAppsFailed() + clusterMetrics.getAppsKilled()
+                )
+            ).
         td(String.valueOf(clusterMetrics.getContainersAllocated())).
         td(StringUtils.byteDesc(clusterMetrics.getAllocatedMB() * BYTES_IN_MB)).
         td(StringUtils.byteDesc(clusterMetrics.getTotalMB() * BYTES_IN_MB)).
@@ -109,17 +109,17 @@ public class MetricsOverviewTable extends HtmlBlock {
         td().a(url("nodes/lost"),String.valueOf(clusterMetrics.getLostNodes()))._().
         td().a(url("nodes/unhealthy"),String.valueOf(clusterMetrics.getUnhealthyNodes()))._().
         td().a(url("nodes/rebooted"),String.valueOf(clusterMetrics.getRebootedNodes()))._().
-        _().
-        _()._();
-
+      _().
+    _()._();
+    
     String user = request().getRemoteUser();
     if (user != null) {
       UserMetricsInfo userMetrics = new UserMetricsInfo(this.rm, user);
       if (userMetrics.metricsAvailable()) {
         div.h3("User Metrics for " + user).
-            table("#usermetricsoverview").
-            thead().$class("ui-widget-header").
-            tr().
+        table("#usermetricsoverview").
+        thead().$class("ui-widget-header").
+          tr().
             th().$class("ui-state-default")._("Apps Submitted")._().
             th().$class("ui-state-default")._("Apps Pending")._().
             th().$class("ui-state-default")._("Apps Running")._().
@@ -133,22 +133,22 @@ public class MetricsOverviewTable extends HtmlBlock {
             th().$class("ui-state-default")._("VCores Used")._().
             th().$class("ui-state-default")._("VCores Pending")._().
             th().$class("ui-state-default")._("VCores Reserved")._().
-            th().$class("ui-state-default")._("Gpus Used")._().
-            th().$class("ui-state-default")._("Gpus Pending")._().
-            th().$class("ui-state-default")._("Gpus Reserved")._().
-            _().
-            _().
-            tbody().$class("ui-widget-content").
-            tr().
+            th().$class("ui-state-default")._("GPUs Used")._().
+            th().$class("ui-state-default")._("GPUs Pending")._().
+            th().$class("ui-state-default")._("GPUs Reserved")._().
+          _().
+        _().
+        tbody().$class("ui-widget-content").
+          tr().
             td(String.valueOf(userMetrics.getAppsSubmitted())).
             td(String.valueOf(userMetrics.getAppsPending())).
             td(String.valueOf(userMetrics.getAppsRunning())).
             td(
                 String.valueOf(
-                    (userMetrics.getAppsCompleted() +
-                        userMetrics.getAppsFailed() + userMetrics.getAppsKilled())
-                )
-            ).
+                    (userMetrics.getAppsCompleted() + 
+                     userMetrics.getAppsFailed() + userMetrics.getAppsKilled())
+                    )
+              ).
             td(String.valueOf(userMetrics.getRunningContainers())).
             td(String.valueOf(userMetrics.getPendingContainers())).
             td(String.valueOf(userMetrics.getReservedContainers())).
@@ -158,35 +158,35 @@ public class MetricsOverviewTable extends HtmlBlock {
             td(String.valueOf(userMetrics.getAllocatedVirtualCores())).
             td(String.valueOf(userMetrics.getPendingVirtualCores())).
             td(String.valueOf(userMetrics.getReservedVirtualCores())).
-            td(String.valueOf(userMetrics.getAllocatedGpus())).
-            td(String.valueOf(userMetrics.getPendingGpus())).
-            td(String.valueOf(userMetrics.getReservedGpus())).
-            _().
-            _()._();
-
+            td(String.valueOf(userMetrics.getAllocatedGPUs())).
+            td(String.valueOf(userMetrics.getPendingGPUs())).
+            td(String.valueOf(userMetrics.getReservedGPUs())).
+          _().
+        _()._();
+        
       }
     }
-
+    
     SchedulerInfo schedulerInfo=new SchedulerInfo(this.rm);
-
+    
     div.h3("Scheduler Metrics").
-        table("#schedulermetricsoverview").
-        thead().$class("ui-widget-header").
-        tr().
+    table("#schedulermetricsoverview").
+    thead().$class("ui-widget-header").
+      tr().
         th().$class("ui-state-default")._("Scheduler Type")._().
         th().$class("ui-state-default")._("Scheduling Resource Type")._().
         th().$class("ui-state-default")._("Minimum Allocation")._().
         th().$class("ui-state-default")._("Maximum Allocation")._().
-        _().
-        _().
-        tbody().$class("ui-widget-content").
-        tr().
+      _().
+    _().
+    tbody().$class("ui-widget-content").
+      tr().
         td(String.valueOf(schedulerInfo.getSchedulerType())).
         td(String.valueOf(schedulerInfo.getSchedulerResourceTypes())).
         td(schedulerInfo.getMinAllocation().toString()).
         td(schedulerInfo.getMaxAllocation().toString()).
-        _().
-        _()._();
+      _().
+    _()._();
 
     div._();
   }

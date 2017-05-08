@@ -171,7 +171,7 @@ public class WindowsResourceCalculatorPlugin extends ResourceCalculatorPlugin {
   
   @Override
   public int getNumGPUs() {
-    throw new  UnsupportedCodecException("Not supporting Windows with GPUs " +
-        "yet");
+    //No support for GPUs under windows!!!!
+    return 0;
   }
 }

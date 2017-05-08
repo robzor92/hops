@@ -58,11 +58,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestSystemMetricsPublisher {
-  
+
   private static ApplicationHistoryServer timelineServer;
   private static SystemMetricsPublisher metricsPublisher;
   private static TimelineStore store;
-  
+
   @BeforeClass
   public static void setup() throws Exception {
     YarnConfiguration conf = new YarnConfiguration();
@@ -75,17 +75,17 @@ public class TestSystemMetricsPublisher {
     conf.setInt(
         YarnConfiguration.RM_SYSTEM_METRICS_PUBLISHER_DISPATCHER_POOL_SIZE,
         2);
-    
+
     timelineServer = new ApplicationHistoryServer();
     timelineServer.init(conf);
     timelineServer.start();
     store = timelineServer.getTimelineStore();
-    
+
     metricsPublisher = new SystemMetricsPublisher();
     metricsPublisher.init(conf);
     metricsPublisher.start();
   }
-  
+
   @AfterClass
   public static void tearDown() throws Exception {
     if (metricsPublisher != null) {
@@ -95,7 +95,7 @@ public class TestSystemMetricsPublisher {
       timelineServer.stop();
     }
   }
-  
+
   @Test(timeout = 10000)
   public void testPublishApplicationMetrics() throws Exception {
     for (int i = 1; i <= 2; ++i) {
@@ -160,10 +160,6 @@ public class TestSystemMetricsPublisher {
             app.getRMAppMetrics().getVcoreSeconds(),
             Long.parseLong(entity.getOtherInfo()
                 .get(ApplicationMetricsConstants.APP_CPU_METRICS).toString()));
-        Assert.assertEquals(
-            app.getRMAppMetrics().getGPUSeconds(),
-            Long.parseLong(entity.getOtherInfo()
-                .get(ApplicationMetricsConstants.APP_GPU_METRICS).toString()));
       }
       boolean hasCreatedEvent = false;
       boolean hasFinishedEvent = false;
@@ -196,7 +192,7 @@ public class TestSystemMetricsPublisher {
       Assert.assertTrue(hasCreatedEvent && hasFinishedEvent && hasACLsUpdatedEvent);
     }
   }
-  
+
   @Test(timeout = 10000)
   public void testPublishAppAttemptMetricsForUnmanagedAM() throws Exception {
     ApplicationAttemptId appAttemptId =
@@ -216,7 +212,7 @@ public class TestSystemMetricsPublisher {
       // ensure two events are both published before leaving the loop
     } while (entity == null || entity.getEvents().size() < 2);
   }
-  
+
   @Test(timeout = 10000)
   public void testPublishAppAttemptMetrics() throws Exception {
     ApplicationAttemptId appAttemptId =
@@ -284,7 +280,7 @@ public class TestSystemMetricsPublisher {
     }
     Assert.assertTrue(hasRegisteredEvent && hasFinishedEvent);
   }
-  
+
   @Test(timeout = 10000)
   public void testPublishHostPortInfoOnContainerFinished() throws Exception {
     ContainerId containerId =
@@ -314,7 +310,7 @@ public class TestSystemMetricsPublisher {
         entity.getOtherInfo().get(
             ContainerMetricsConstants.ALLOCATED_PORT_ENTITY_INFO));
   }
-  
+
   @Test(timeout = 10000)
   public void testPublishContainerMetrics() throws Exception {
     ContainerId containerId =
@@ -357,13 +353,9 @@ public class TestSystemMetricsPublisher {
         entity.getOtherInfo().get(
             ContainerMetricsConstants.ALLOCATED_VCORE_ENTITY_INFO));
     Assert.assertEquals(
-        container.getAllocatedResource().getGPUs(),
+        container.getAllocatedPriority().getPriority(),
         entity.getOtherInfo().get(
-            ContainerMetricsConstants.ALLOCATED_GPU_ENTITY_INFO));
-        Assert.assertEquals(
-            container.getAllocatedPriority().getPriority(),
-            entity.getOtherInfo().get(
-                ContainerMetricsConstants.ALLOCATED_PRIORITY_ENTITY_INFO));
+            ContainerMetricsConstants.ALLOCATED_PRIORITY_ENTITY_INFO));
     boolean hasCreatedEvent = false;
     boolean hasFinishedEvent = false;
     for (TimelineEvent event : entity.getEvents()) {
@@ -389,7 +381,7 @@ public class TestSystemMetricsPublisher {
     }
     Assert.assertTrue(hasCreatedEvent && hasFinishedEvent);
   }
-  
+
   private static RMApp createRMApp(ApplicationId appId) {
     RMApp app = mock(RMApp.class);
     when(app.getApplicationId()).thenReturn(appId);
@@ -409,10 +401,11 @@ public class TestSystemMetricsPublisher {
     when(app.getFinalApplicationStatus()).thenReturn(
         FinalApplicationStatus.UNDEFINED);
     when(app.getRMAppMetrics()).thenReturn(
-        new RMAppMetrics(null, 0, 0, Integer.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE));
+        new RMAppMetrics(null, 0, 0, Integer.MAX_VALUE, Long.MAX_VALUE,
+            Long.MAX_VALUE));
     return app;
   }
-  
+
   private static RMAppAttempt createRMAppAttempt(
       ApplicationAttemptId appAttemptId, boolean unmanagedAMAttempt) {
     RMAppAttempt appAttempt = mock(RMAppAttempt.class);
@@ -431,14 +424,14 @@ public class TestSystemMetricsPublisher {
         "test original tracking url");
     return appAttempt;
   }
-  
+
   private static RMContainer createRMContainer(ContainerId containerId) {
     RMContainer container = mock(RMContainer.class);
     when(container.getContainerId()).thenReturn(containerId);
     when(container.getAllocatedNode()).thenReturn(
         NodeId.newInstance("test host", -100));
     when(container.getAllocatedResource()).thenReturn(
-        Resource.newInstance(-1, -1, -1));
+        Resource.newInstance(-1, -1));
     when(container.getAllocatedPriority()).thenReturn(Priority.UNDEFINED);
     when(container.getCreationTime()).thenReturn(Integer.MAX_VALUE + 1L);
     when(container.getFinishTime()).thenReturn(Integer.MAX_VALUE + 2L);
@@ -448,8 +441,8 @@ public class TestSystemMetricsPublisher {
     Container mockContainer = mock(Container.class);
     when(container.getContainer()).thenReturn(mockContainer);
     when(mockContainer.getNodeHttpAddress())
-        .thenReturn("http://localhost:1234");
+      .thenReturn("http://localhost:1234");
     return container;
   }
-  
+
 }

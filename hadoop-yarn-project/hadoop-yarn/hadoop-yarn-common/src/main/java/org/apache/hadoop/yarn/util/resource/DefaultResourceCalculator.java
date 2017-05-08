@@ -69,9 +69,7 @@ public class DefaultResourceCalculator extends ResourceCalculator {
             Math.max(r.getMemory(), minimumResource.getMemory()),
             stepFactor.getMemory()),
             maximumResource.getMemory());
-    Resource res = Resources.createResource(normalizedMemory);
-    res.setGPUs(r.getGPUs());
-    return res;
+    return Resources.createResource(normalizedMemory);
   }
 
   @Override

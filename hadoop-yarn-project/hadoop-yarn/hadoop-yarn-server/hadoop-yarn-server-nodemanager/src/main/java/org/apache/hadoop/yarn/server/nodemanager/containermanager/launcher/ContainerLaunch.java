@@ -200,7 +200,7 @@ public class ContainerLaunch implements Callable<Integer> {
         entry.setValue(value);
       }
       // /////////////////////////// End of variable expansion
-      
+
       FileContext lfs = FileContext.getLocalFSFileContext();
 
       Path nmPrivateContainerScriptPath =

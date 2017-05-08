@@ -45,7 +45,7 @@ import com.google.common.base.Joiner;
 @XmlRootElement(name = "app")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AppInfo {
-  
+
   @XmlTransient
   protected String appIdNum;
   @XmlTransient
@@ -58,7 +58,7 @@ public class AppInfo {
   protected ApplicationId applicationId;
   @XmlTransient
   private String schemePrefix;
-  
+
   // these are ok for any user to see
   protected String id;
   protected String user;
@@ -94,12 +94,12 @@ public class AppInfo {
   protected int preemptedResourceGPUs;
   protected int numNonAMContainerPreempted;
   protected int numAMContainerPreempted;
-  
+
   protected List<ResourceRequest> resourceRequests;
-  
+
   public AppInfo() {
   } // JAXB needs this
-  
+
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public AppInfo(ResourceManager rm, RMApp app, Boolean hasAccess,
       String schemePrefix) {
@@ -144,7 +144,7 @@ public class AppInfo {
         this.finishedTime = app.getFinishTime();
         this.elapsedTime = Times.elapsed(app.getStartTime(),
             app.getFinishTime());
-        
+
         RMAppAttempt attempt = app.getCurrentAppAttempt();
         if (attempt != null) {
           Container masterContainer = attempt.getMasterContainer();
@@ -168,10 +168,10 @@ public class AppInfo {
           }
           resourceRequests =
               ((AbstractYarnScheduler) rm.getRMContext().getScheduler())
-                  .getPendingResourceRequestsForAttempt(attempt.getAppAttemptId());
+                .getPendingResourceRequestsForAttempt(attempt.getAppAttemptId());
         }
       }
-      
+
       // copy preemption info fields
       RMAppMetrics appMetrics = app.getRMAppMetrics();
       numAMContainerPreempted =
@@ -189,95 +189,95 @@ public class AppInfo {
       gpuSeconds = appMetrics.getGPUSeconds();
     }
   }
-  
+
   public boolean isTrackingUrlReady() {
     return !this.trackingUrlIsNotReady;
   }
-  
+
   public ApplicationId getApplicationId() {
     return this.applicationId;
   }
-  
+
   public String getAppId() {
     return this.id;
   }
-  
+
   public String getAppIdNum() {
     return this.appIdNum;
   }
-  
+
   public String getUser() {
     return this.user;
   }
-  
+
   public String getQueue() {
     return this.queue;
   }
-  
+
   public String getName() {
     return this.name;
   }
-  
+
   public YarnApplicationState getState() {
     return this.state;
   }
-  
+
   public float getProgress() {
     return this.progress;
   }
-  
+
   public String getTrackingUI() {
     return this.trackingUI;
   }
-  
+
   public String getNote() {
     return this.diagnostics;
   }
-  
+
   public FinalApplicationStatus getFinalStatus() {
     return this.finalStatus;
   }
-  
+
   public String getTrackingUrl() {
     return this.trackingUrl;
   }
-  
+
   public String getTrackingUrlPretty() {
     return this.trackingUrlPretty;
   }
-  
+
   public long getStartTime() {
     return this.startedTime;
   }
-  
+
   public long getFinishTime() {
     return this.finishedTime;
   }
-  
+
   public long getElapsedTime() {
     return this.elapsedTime;
   }
-  
+
   public String getAMContainerLogs() {
     return this.amContainerLogs;
   }
-  
+
   public String getAMHostHttpAddress() {
     return this.amHostHttpAddress;
   }
-  
+
   public boolean amContainerLogsExist() {
     return this.amContainerLogsExist;
   }
-  
+
   public long getClusterId() {
     return this.clusterId;
   }
-  
+
   public String getApplicationType() {
     return this.applicationType;
   }
-  
+
   public String getApplicationTags() {
     return this.applicationTags;
   }
@@ -301,7 +301,7 @@ public class AppInfo {
   public int getPreemptedMB() {
     return preemptedResourceMB;
   }
-  
+
   public int getPreemptedVCores() {
     return preemptedResourceVCores;
   }
@@ -309,8 +309,7 @@ public class AppInfo {
   public int getPreemptedGPUs() {
     return preemptedResourceGPUs;
   }
-  
-  
+
   public int getNumNonAMContainersPreempted() {
     return numNonAMContainerPreempted;
   }
@@ -318,11 +317,11 @@ public class AppInfo {
   public int getNumAMContainersPreempted() {
     return numAMContainerPreempted;
   }
-  
+ 
   public long getMemorySeconds() {
     return memorySeconds;
   }
-  
+
   public long getVcoreSeconds() {
     return vcoreSeconds;
   }
@@ -330,7 +329,7 @@ public class AppInfo {
   public long getGPUSeconds() {
     return gpuSeconds;
   }
-  
+
   public List<ResourceRequest> getResourceRequests() {
     return this.resourceRequests;
   }

@@ -86,9 +86,9 @@ public class ClusterMetricsInfo {
     this.availableVirtualCores = metrics.getAvailableVirtualCores();
     this.allocatedVirtualCores = metrics.getAllocatedVirtualCores();
 
-    this.reservedGpus = metrics.getReservedGpus();
-    this.availableGpus = metrics.getAvailableGpus();
-    this.allocatedGpus = metrics.getAllocatedGpus();
+    this.reservedGpus = metrics.getReservedGPUs();
+    this.availableGpus = metrics.getAvailableGPUs();
+    this.allocatedGpus = metrics.getAllocatedGPUs();
 
     this.containersAllocated = metrics.getAllocatedContainers();
     this.containersPending = metrics.getPendingContainers();

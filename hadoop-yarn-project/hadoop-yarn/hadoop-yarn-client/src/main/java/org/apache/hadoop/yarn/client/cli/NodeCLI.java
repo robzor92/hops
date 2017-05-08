@@ -50,11 +50,11 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 @Unstable
 public class NodeCLI extends YarnCLI {
   private static final String NODES_PATTERN = "%16s\t%15s\t%17s\t%28s" +
-      System.getProperty("line.separator");
-  
+    System.getProperty("line.separator");
+
   private static final String NODE_STATE_CMD = "states";
   private static final String NODE_ALL = "all";
-  
+
   public static void main(String[] args) throws Exception {
     NodeCLI cli = new NodeCLI();
     cli.setSysOutPrintStream(System.out);
@@ -63,10 +63,10 @@ public class NodeCLI extends YarnCLI {
     cli.stop();
     System.exit(res);
   }
-  
+
   @Override
   public int run(String[] args) throws Exception {
-    
+
     Options opts = new Options();
     opts.addOption(HELP_CMD, false, "Displays help for all commands.");
     opts.addOption(STATUS_CMD, true, "Prints the status report of the node.");
@@ -83,7 +83,7 @@ public class NodeCLI extends YarnCLI {
         "Works with -list to list all nodes.");
     opts.addOption(allOpt);
     opts.getOption(STATUS_CMD).setArgName("NodeId");
-    
+
     int exitCode = -1;
     CommandLine cliParser = null;
     try {
@@ -93,7 +93,7 @@ public class NodeCLI extends YarnCLI {
       printUsage(opts);
       return exitCode;
     }
-    
+
     if (cliParser.hasOption("status")) {
       if (args.length != 2) {
         printUsage(opts);
@@ -129,29 +129,29 @@ public class NodeCLI extends YarnCLI {
     }
     return 0;
   }
-  
+
   /**
    * It prints the usage of the command
-   *
+   * 
    * @param opts
    */
   private void printUsage(Options opts) {
     new HelpFormatter().printHelp("node", opts);
   }
-  
+
   /**
    * Lists the nodes matching the given node states
-   *
+   * 
    * @param nodeStates
    * @throws YarnException
    * @throws IOException
    */
-  private void listClusterNodes(Set<NodeState> nodeStates)
-      throws YarnException, IOException {
+  private void listClusterNodes(Set<NodeState> nodeStates) 
+            throws YarnException, IOException {
     PrintWriter writer = new PrintWriter(
         new OutputStreamWriter(sysout, Charset.forName("UTF-8")));
     List<NodeReport> nodesReport = client.getNodeReports(
-        nodeStates.toArray(new NodeState[0]));
+                                       nodeStates.toArray(new NodeState[0]));
     writer.println("Total Nodes:" + nodesReport.size());
     writer.printf(NODES_PATTERN, "Node-Id", "Node-State", "Node-Http-Address",
         "Number-of-Running-Containers");
@@ -162,10 +162,10 @@ public class NodeCLI extends YarnCLI {
     }
     writer.flush();
   }
-  
+
   /**
    * Prints the node report for node id.
-   *
+   * 
    * @param nodeIdStr
    * @throws YarnException
    */
@@ -195,7 +195,7 @@ public class NodeCLI extends YarnCLI {
       nodeReportStr.print("\tLast-Health-Update : ");
       nodeReportStr.println(DateFormatUtils.format(
           new Date(nodeReport.getLastHealthReportTime()),
-          "E dd/MMM/yy hh:mm:ss:SSzz"));
+            "E dd/MMM/yy hh:mm:ss:SSzz"));
       nodeReportStr.print("\tHealth-Report : ");
       nodeReportStr
           .println(nodeReport.getHealthReport());
@@ -211,13 +211,13 @@ public class NodeCLI extends YarnCLI {
           : (nodeReport.getUsed().getVirtualCores() + " vcores"));
       nodeReportStr.print("\tCPU-Capacity : ");
       nodeReportStr.println(nodeReport.getCapability().getVirtualCores() + " vcores");
+      nodeReportStr.print("\tNode-Labels : ");
       nodeReportStr.print("\tGPU-Used : ");
       nodeReportStr.println((nodeReport.getUsed() == null) ? "0 gpus"
           : (nodeReport.getUsed().getGPUs() + " gpus"));
       nodeReportStr.print("\tGPU-Capacity : ");
       nodeReportStr.println(nodeReport.getCapability().getGPUs() + " " +
-          "gpus");
-      nodeReportStr.print("\tNode-Labels : ");
+                    "gpus");
       
       // Create a List for node labels since we need it get sorted
       List<String> nodeLabelsList =
@@ -225,7 +225,7 @@ public class NodeCLI extends YarnCLI {
       Collections.sort(nodeLabelsList);
       nodeReportStr.println(StringUtils.join(nodeLabelsList.iterator(), ','));
     }
-    
+
     if (nodeReport == null) {
       nodeReportStr.print("Could not find the node report for node id : "
           + nodeIdStr);

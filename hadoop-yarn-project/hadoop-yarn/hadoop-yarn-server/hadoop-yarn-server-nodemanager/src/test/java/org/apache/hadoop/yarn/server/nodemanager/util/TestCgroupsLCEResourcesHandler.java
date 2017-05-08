@@ -17,11 +17,7 @@
  */
 package org.apache.hadoop.yarn.server.nodemanager.util;
 
-import io.hops.GPUManagementLibrary;
-import io.hops.devices.Device;
-import io.hops.devices.GPUAllocator;
 import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor;
@@ -35,8 +31,6 @@ import org.junit.Before;
 import org.mockito.Mockito;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
@@ -47,7 +41,6 @@ public class TestCgroupsLCEResourcesHandler {
 
   static class MockClock implements Clock {
     long time;
-
     @Override
     public long getTime() {
       return time;
@@ -57,9 +50,9 @@ public class TestCgroupsLCEResourcesHandler {
   @Before
   public void setUp() throws Exception {
     cgroupDir =
-            new File(System.getProperty("test.build.data",
-                    System.getProperty("java.io.tmpdir", "target")), this.getClass()
-                    .getName());
+        new File(System.getProperty("test.build.data",
+            System.getProperty("java.io.tmpdir", "target")), this.getClass()
+            .getName());
     FileUtils.deleteQuietly(cgroupDir);
   }
 
@@ -126,7 +119,7 @@ public class TestCgroupsLCEResourcesHandler {
           //NOP
         }
         clock.time += YarnConfiguration.
-                DEFAULT_NM_LINUX_CONTAINER_CGROUPS_DELETE_TIMEOUT;
+            DEFAULT_NM_LINUX_CONTAINER_CGROUPS_DELETE_TIMEOUT;
       }
     }.start();
     latch.await();
@@ -141,10 +134,9 @@ public class TestCgroupsLCEResourcesHandler {
   }
 
   static class CustomCgroupsLCEResourceHandler extends
-          CgroupsLCEResourcesHandler {
+      CgroupsLCEResourcesHandler {
 
     String mtabFile;
-    GPUAllocator gpuAllocator;
     int[] limits = new int[2];
     boolean generateLimitsMode = false;
 
@@ -164,33 +156,23 @@ public class TestCgroupsLCEResourcesHandler {
     String getMtabFileName() {
       return mtabFile;
     }
-
-    void setGPUAllocator(GPUAllocator gpuAllocator) {
-      this.gpuAllocator = gpuAllocator;
-    }
-
-    @Override
-    GPUAllocator getGPUAllocator() {
-      return gpuAllocator;
-    }
   }
 
   @Test
   public void testInit() throws IOException {
     LinuxContainerExecutor mockLCE = new MockLinuxContainerExecutor();
     CustomCgroupsLCEResourceHandler handler =
-            new CustomCgroupsLCEResourceHandler();
+        new CustomCgroupsLCEResourceHandler();
     YarnConfiguration conf = new YarnConfiguration();
     final int numProcessors = 4;
     ResourceCalculatorPlugin plugin =
-            Mockito.mock(ResourceCalculatorPlugin.class);
+        Mockito.mock(ResourceCalculatorPlugin.class);
     Mockito.doReturn(numProcessors).when(plugin).getNumProcessors();
     handler.setConf(conf);
     handler.initConfig();
 
     // create mock cgroup
-    File cgroupMountDirCPU = createMockCgroupMount(cgroupDir, "cpu");
-    File cgroupMountDirGPU = createMockCgroupMount(cgroupDir, "devices");
+    File cgroupMountDir = createMockCgroupMount(cgroupDir);
 
     // create mock mtab
     File mockMtab = createMockMTab(cgroupDir);
@@ -202,18 +184,14 @@ public class TestCgroupsLCEResourcesHandler {
     // in this case, we're using all cpu so the files
     // shouldn't exist(because init won't create them
     handler.init(mockLCE, plugin);
-    File periodFile = new File(cgroupMountDirCPU, "cpu.cfs_period_us");
-    File quotaFile = new File(cgroupMountDirCPU, "cpu.cfs_quota_us");
-    File devicesAllowFile = new File(cgroupMountDirGPU, "devices.allow");
-    File devicesDenyFile = new File(cgroupMountDirGPU, "devices.deny");
+    File periodFile = new File(cgroupMountDir, "cpu.cfs_period_us");
+    File quotaFile = new File(cgroupMountDir, "cpu.cfs_quota_us");
     Assert.assertFalse(periodFile.exists());
     Assert.assertFalse(quotaFile.exists());
-    Assert.assertFalse(devicesAllowFile.exists());
-    Assert.assertFalse(devicesDenyFile.exists());
 
     // subset of cpu being used, files should be created
     conf
-            .setInt(YarnConfiguration.NM_RESOURCE_PERCENTAGE_PHYSICAL_CPU_LIMIT, 75);
+      .setInt(YarnConfiguration.NM_RESOURCE_PERCENTAGE_PHYSICAL_CPU_LIMIT, 75);
     handler.limits[0] = 100 * 1000;
     handler.limits[1] = 1000 * 1000;
     handler.init(mockLCE, plugin);
@@ -224,7 +202,7 @@ public class TestCgroupsLCEResourcesHandler {
 
     // set cpu back to 100, quota should be -1
     conf.setInt(YarnConfiguration.NM_RESOURCE_PERCENTAGE_PHYSICAL_CPU_LIMIT,
-            100);
+      100);
     handler.limits[0] = 100 * 1000;
     handler.limits[1] = 1000 * 1000;
     handler.init(mockLCE, plugin);
@@ -273,20 +251,21 @@ public class TestCgroupsLCEResourcesHandler {
     Assert.assertEquals(-1, ret[1]);
   }
 
-  public static File createMockCgroupMount(File parentDir, String type)
-          throws IOException {
-    return createMockCgroupMount(parentDir, type, "hadoop-yarn");
+  private File createMockCgroupMount(File cgroupDir) throws IOException {
+    File cgroupMountDir = new File(cgroupDir.getAbsolutePath(), "hadoop-yarn");
+    FileUtils.deleteQuietly(cgroupDir);
+    if (!cgroupMountDir.mkdirs()) {
+      String message =
+          "Could not create dir " + cgroupMountDir.getAbsolutePath();
+      throw new IOException(message);
+    }
+    return cgroupMountDir;
   }
 
-  public static File createMockMTab(File parentDir) throws IOException {
-    String cpuMtabContent =
-            "none " + parentDir.getAbsolutePath()
-                    + "/cpu cgroup rw,relatime,cpu 0 0\n";
-    String devicesMtabContent =
-            "none " + parentDir.getAbsolutePath()
-                    + "/devices cgroup rw,relatime,devices 0 0\n";
-
-    File mockMtab = new File(parentDir, UUID.randomUUID().toString());
+  private File createMockMTab(File cgroupDir) throws IOException {
+    String mtabContent =
+        "none " + cgroupDir.getAbsolutePath() + " cgroup rw,relatime,cpu 0 0";
+    File mockMtab = new File("target", UUID.randomUUID().toString());
     if (!mockMtab.exists()) {
       if (!mockMtab.createNewFile()) {
         String message = "Could not create file " + mockMtab.getAbsolutePath();
@@ -294,8 +273,7 @@ public class TestCgroupsLCEResourcesHandler {
       }
     }
     FileWriter mtabWriter = new FileWriter(mockMtab.getAbsoluteFile());
-    mtabWriter.write(cpuMtabContent);
-    mtabWriter.write(devicesMtabContent);
+    mtabWriter.write(mtabContent);
     mtabWriter.close();
     mockMtab.deleteOnExit();
     return mockMtab;
@@ -305,19 +283,18 @@ public class TestCgroupsLCEResourcesHandler {
   public void testContainerLimits() throws IOException {
     LinuxContainerExecutor mockLCE = new MockLinuxContainerExecutor();
     CustomCgroupsLCEResourceHandler handler =
-            new CustomCgroupsLCEResourceHandler();
+        new CustomCgroupsLCEResourceHandler();
     handler.generateLimitsMode = true;
     YarnConfiguration conf = new YarnConfiguration();
     final int numProcessors = 4;
     ResourceCalculatorPlugin plugin =
-            Mockito.mock(ResourceCalculatorPlugin.class);
+        Mockito.mock(ResourceCalculatorPlugin.class);
     Mockito.doReturn(numProcessors).when(plugin).getNumProcessors();
     handler.setConf(conf);
     handler.initConfig();
 
     // create mock cgroup
-    File cgroupMountDirCPU = createMockCgroupMount(cgroupDir, "cpu");
-    File cgroupMountDirGPU = createMockCgroupMount(cgroupDir, "devices");
+    File cgroupMountDir = createMockCgroupMount(cgroupDir);
 
     // create mock mtab
     File mockMtab = createMockMTab(cgroupDir);
@@ -330,7 +307,7 @@ public class TestCgroupsLCEResourcesHandler {
     // default case - files shouldn't exist, strict mode off by default
     ContainerId id = ContainerId.fromString("container_1_1_1_1");
     handler.preExecute(id, Resource.newInstance(1024, 1));
-    File containerDir = new File(cgroupMountDirCPU, id.toString());
+    File containerDir = new File(cgroupMountDir, id.toString());
     Assert.assertTrue(containerDir.exists());
     Assert.assertTrue(containerDir.isDirectory());
     File periodFile = new File(containerDir, "cpu.cfs_period_us");
@@ -341,10 +318,10 @@ public class TestCgroupsLCEResourcesHandler {
     // no files created because we're using all cpu
     FileUtils.deleteQuietly(containerDir);
     conf.setBoolean(
-            YarnConfiguration.NM_LINUX_CONTAINER_CGROUPS_STRICT_RESOURCE_USAGE, true);
+      YarnConfiguration.NM_LINUX_CONTAINER_CGROUPS_STRICT_RESOURCE_USAGE, true);
     handler.initConfig();
     handler.preExecute(id,
-            Resource.newInstance(1024, YarnConfiguration.DEFAULT_NM_VCORES));
+      Resource.newInstance(1024, YarnConfiguration.DEFAULT_NM_VCORES));
     Assert.assertTrue(containerDir.exists());
     Assert.assertTrue(containerDir.isDirectory());
     periodFile = new File(containerDir, "cpu.cfs_period_us");
@@ -355,10 +332,10 @@ public class TestCgroupsLCEResourcesHandler {
     // 50% of CPU
     FileUtils.deleteQuietly(containerDir);
     conf.setBoolean(
-            YarnConfiguration.NM_LINUX_CONTAINER_CGROUPS_STRICT_RESOURCE_USAGE, true);
+      YarnConfiguration.NM_LINUX_CONTAINER_CGROUPS_STRICT_RESOURCE_USAGE, true);
     handler.initConfig();
     handler.preExecute(id,
-            Resource.newInstance(1024, YarnConfiguration.DEFAULT_NM_VCORES / 2));
+      Resource.newInstance(1024, YarnConfiguration.DEFAULT_NM_VCORES / 2));
     Assert.assertTrue(containerDir.exists());
     Assert.assertTrue(containerDir.isDirectory());
     periodFile = new File(containerDir, "cpu.cfs_period_us");
@@ -371,13 +348,13 @@ public class TestCgroupsLCEResourcesHandler {
     // CGroups set to 50% of CPU, container set to 50% of YARN CPU
     FileUtils.deleteQuietly(containerDir);
     conf.setBoolean(
-            YarnConfiguration.NM_LINUX_CONTAINER_CGROUPS_STRICT_RESOURCE_USAGE, true);
+      YarnConfiguration.NM_LINUX_CONTAINER_CGROUPS_STRICT_RESOURCE_USAGE, true);
     conf
-            .setInt(YarnConfiguration.NM_RESOURCE_PERCENTAGE_PHYSICAL_CPU_LIMIT, 50);
+      .setInt(YarnConfiguration.NM_RESOURCE_PERCENTAGE_PHYSICAL_CPU_LIMIT, 50);
     handler.initConfig();
     handler.init(mockLCE, plugin);
     handler.preExecute(id,
-            Resource.newInstance(1024, YarnConfiguration.DEFAULT_NM_VCORES / 2));
+      Resource.newInstance(1024, YarnConfiguration.DEFAULT_NM_VCORES / 2));
     Assert.assertTrue(containerDir.exists());
     Assert.assertTrue(containerDir.isDirectory());
     periodFile = new File(containerDir, "cpu.cfs_period_us");
@@ -390,211 +367,4 @@ public class TestCgroupsLCEResourcesHandler {
     FileUtils.deleteQuietly(cgroupDir);
   }
 
-  @Test
-  public void testContainerGPUAllocation() throws IOException {
-    LinuxContainerExecutor mockLCE = new MockLinuxContainerExecutor();
-    CustomCgroupsLCEResourceHandler handler =
-            new CustomCgroupsLCEResourceHandler();
-    YarnConfiguration conf = new YarnConfiguration();
-    conf.setBoolean(YarnConfiguration.NM_GPU_RESOURCE_ENABLED, true);
-    final int numGPUs = 8;
-    ResourceCalculatorPlugin plugin =
-            Mockito.mock(ResourceCalculatorPlugin.class);
-    Mockito.doReturn(numGPUs).when(plugin).getNumGPUs();
-    handler.setConf(conf);
-    handler.initConfig();
-
-    // create mock cgroup
-    File cgroupMountDirCPU = createMockCgroupMount(cgroupDir, "cpu");
-    File cgroupMountDirGPU = createMockCgroupMount(cgroupDir, "devices");
-
-    // create mock mtab
-    File mockMtab = createMockMTab(cgroupDir);
-    
-    ContainerId id = ContainerId.fromString("container_1_1_1_1");
-    GPUAllocator gpuAllocator = null;
-
-      gpuAllocator = new GPUAllocator(new
-          CustomGPUmanagementLibrary(), 8);
- 
-    Device gpu0 = new Device(195, 0);
-    Device gpu1 = new Device(195, 1);
-    Device gpu2 = new Device(195, 2);
-    Device gpu3 = new Device(195, 3);
-    Device gpu4 = new Device(195, 4);
-    Device gpu5 = new Device(195, 5);
-    Device gpu6 = new Device(195, 6);
-    Device gpu7 = new Device(195, 7);
-
-    
-    // setup our handler and call init()
-    handler.setGPUAllocator(gpuAllocator);
-    handler.setMtabFile(mockMtab.getAbsolutePath());
-    handler.init(mockLCE, plugin);
-    File containerDirGPU = new File(cgroupMountDirGPU, id.toString());
-    File denyFile = new File(containerDirGPU, "devices.deny");
-    Assert.assertFalse(denyFile.exists());
-    //FIRST ALLOCATION
-    handler.preExecute(id, Resource.newInstance(1024, 1, 2));
-    Assert.assertTrue(containerDirGPU.exists());
-    Assert.assertTrue(containerDirGPU.isDirectory());
-    Assert.assertTrue(denyFile.exists());
-
-    Assert.assertTrue(gpuAllocator.getAvailableDevices().size() == 6);
-    //SECOND ALLOCATION
-    HashSet<Device> deviceAllocation1 = gpuAllocator.allocate
-        ("test_container", 2);
-    
-    HashSet<Device> deniedDevices1 = deviceAllocation1;
-    //gpu0 and gpu1 already allocated
-    Assert.assertTrue(deniedDevices1.contains(gpu0));
-    Assert.assertTrue(deniedDevices1.contains(gpu1));
-    Assert.assertFalse(deniedDevices1.contains(gpu2));
-    Assert.assertFalse(deniedDevices1.contains(gpu3));
-    Assert.assertTrue(deniedDevices1.contains(gpu4));
-    Assert.assertTrue(deniedDevices1.contains(gpu5));
-    Assert.assertTrue(deniedDevices1.contains(gpu6));
-    Assert.assertTrue(deniedDevices1.contains(gpu7));
-  
-    handler.postExecute(id);
-  
-    HashSet<Device> deviceAllocation2 = gpuAllocator.allocate
-        ("test_container2", 3);
-    
-    HashSet<Device> deniedDevices2 = deviceAllocation2;
-    Assert.assertFalse(deniedDevices2.contains(gpu0)); //allocated in first call
-    Assert.assertFalse(deniedDevices2.contains(gpu1));
-    Assert.assertTrue(deniedDevices2.contains(gpu2));
-    Assert.assertTrue(deniedDevices2.contains(gpu3));
-    Assert.assertFalse(deniedDevices2.contains(gpu4));
-    Assert.assertTrue(deniedDevices2.contains(gpu5));
-    Assert.assertTrue(deniedDevices2.contains(gpu6));
-    Assert.assertTrue(deniedDevices2.contains(gpu7));
-    
-    FileUtils.deleteQuietly(cgroupDir);
-  }
-  
-  private static class CustomGPUmanagementLibrary implements GPUManagementLibrary {
-    
-    @Override
-    public boolean initialize() {
-      return true;
-    }
-    
-    @Override
-    public boolean shutDown() {
-      return true;
-    }
-    
-    @Override
-    public int getNumGPUs() {
-      return 8;
-    }
-    
-    @Override
-    public String queryMandatoryDevices() {
-      return "0:1 0:2 0:3";
-    }
-    
-    @Override
-    public String queryAvailableDevices(int configuredGPUs) {
-      return "195:0 195:1 195:2 195:3 195:4 195:5 195:6 195:7";
-    }
-  }
-  
-  @Test
-  public void testContainerRecovery() throws IOException {
-    LinuxContainerExecutor mockLCE = new MockLinuxContainerExecutor();
-    CustomCgroupsLCEResourceHandler handler =
-        new CustomCgroupsLCEResourceHandler();
-    YarnConfiguration conf = new YarnConfiguration();
-    final int numGPUs = 8;
-    ResourceCalculatorPlugin plugin =
-        Mockito.mock(ResourceCalculatorPlugin.class);
-    Mockito.doReturn(numGPUs).when(plugin).getNumGPUs();
-    handler.setConf(conf);
-    handler.initConfig();
-    
-    // create mock cgroup
-    File cgroupMountDirCPU = createMockCgroupMount(cgroupDir, "cpu");
-    File cgroupMountDirGPU = createMockCgroupMount(cgroupDir, "devices");
-    
-    // create mock mtab
-    File mockMtab = createMockMTab(cgroupDir);
-    handler.setMtabFile(mockMtab.getAbsolutePath());
-    GPUAllocator gpuAllocator = new GPUAllocator(new
-        CustomGPUmanagementLibrary(), 8);
-
-    handler.setGPUAllocator(gpuAllocator);
-    handler.init(mockLCE, plugin);
-    
-    ContainerId id1 = ContainerId.fromString("container_1_1_1_1");
-    handler.preExecute(id1, Resource.newInstance(1024, 1, 2));
-    File containerDir1 = new File(cgroupMountDirGPU, id1.toString());
-    File listFile1 = new File(containerDir1, "devices.list");
-    FileOutputStream fos1 = FileUtils.openOutputStream(listFile1);
-    fos1.write(("c 195:0 rwm\n" + "c 195:1 rwm\n").getBytes());
-    
-    ContainerId id2 = ContainerId.fromString("container_1_1_1_2");
-    handler.preExecute(id2, Resource.newInstance(1024, 1, 2));
-    File containerDir2 = new File(cgroupMountDirGPU, id2.toString());
-    File listFile2 = new File(containerDir2, "devices.list");
-    FileOutputStream fos2 = FileUtils.openOutputStream(listFile2);
-    fos2.write(("c 195:2 rwm\n" + "c 195:3 rwm\n").getBytes());
-    
-    ContainerId id3 = ContainerId.fromString("container_1_1_1_3");
-    handler.preExecute(id3, Resource.newInstance(1024, 1, 2));
-    File containerDir3 = new File(cgroupMountDirGPU, id3.toString());
-    File listFile3 = new File(containerDir3, "devices.list");
-    FileOutputStream fos3 = FileUtils.openOutputStream(listFile3);
-    fos3.write(("c 195:4 rwm\n" + "c 195:5 rwm\n").getBytes());
-  
-    gpuAllocator = new GPUAllocator(new
-        CustomGPUmanagementLibrary(), 8);
-    gpuAllocator.initialize(8);
-    handler =
-        new CustomCgroupsLCEResourceHandler();
-    conf = new YarnConfiguration();
-    conf.setBoolean(YarnConfiguration.NM_GPU_RESOURCE_ENABLED, true);
-    plugin =
-        Mockito.mock(ResourceCalculatorPlugin.class);
-    Mockito.doReturn(numGPUs).when(plugin).getNumGPUs();
-    handler.setConf(conf);
-    handler.initConfig();
-    
-    handler.setMtabFile(mockMtab.getAbsolutePath());
-    handler.setGPUAllocator(gpuAllocator);
-    handler.init(mockLCE, plugin);
-    
-    //No recovery yet
-    Assert.assertEquals(8, gpuAllocator.getAvailableDevices().size());
-    Assert.assertTrue(listFile1.exists());
-    handler.recoverDeviceControlSystem(id1);
-    Assert.assertEquals(6, gpuAllocator.getAvailableDevices().size());
-    Assert.assertTrue(listFile2.exists());
-    handler.recoverDeviceControlSystem(id2);
-    Assert.assertEquals(4, gpuAllocator.getAvailableDevices().size());
-    Assert.assertTrue(listFile3.exists());
-    handler.recoverDeviceControlSystem(id3);
-    Assert.assertEquals(2, gpuAllocator.getAvailableDevices().size());
-    HashSet<Device> availableGPUs = new HashSet<>(gpuAllocator
-        .getAvailableDevices());
-    Assert.assertTrue(availableGPUs.contains(new Device(195, 6)));
-    Assert.assertTrue(availableGPUs.contains(new Device(195, 7)));
-    
-    FileUtils.deleteQuietly(cgroupDir);
-  }
-  
-  public static File createMockCgroupMount(File parentDir, String type,
-                                           String hierarchy) throws IOException {
-    File cgroupMountDir =
-            new File(parentDir.getAbsolutePath(), type + "/" + hierarchy);
-    FileUtils.deleteQuietly(cgroupMountDir);
-    if (!cgroupMountDir.mkdirs()) {
-      String message =
-              "Could not create dir " + cgroupMountDir.getAbsolutePath();
-      throw new IOException(message);
-    }
-    return cgroupMountDir;
-  }
 }

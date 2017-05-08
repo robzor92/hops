@@ -6,9 +6,9 @@
  *   to you under the Apache License, Version 2.0 (the
  *   "License"); you may not use this file except in compliance
  *   with the License.  You may obtain a copy of the License at
- *
+ *  
  *       http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *   Unless required by applicable law or agreed to in writing, software
  *   distributed under the License is distributed on an "AS IS" BASIS,
  *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -44,48 +44,48 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class TestInMemoryPlan {
-  
+
   private String user = "yarn";
   private String planName = "test-reservation";
   private ResourceCalculator resCalc;
   private Resource minAlloc;
   private Resource maxAlloc;
   private Resource totalCapacity;
-  
+
   private Clock clock;
   private QueueMetrics queueMetrics;
   private SharingPolicy policy;
   private ReservationAgent agent;
   private Planner replanner;
-  
+
   @Before
   public void setUp() throws PlanningException {
     resCalc = new DefaultResourceCalculator();
-    minAlloc = Resource.newInstance(1024, 1, 1);
-    maxAlloc = Resource.newInstance(64 * 1024, 20, 20);
-    totalCapacity = Resource.newInstance(100 * 1024, 100, 100);
-    
+    minAlloc = Resource.newInstance(1024, 1);
+    maxAlloc = Resource.newInstance(64 * 1024, 20);
+    totalCapacity = Resource.newInstance(100 * 1024, 100);
+
     clock = mock(Clock.class);
     queueMetrics = mock(QueueMetrics.class);
     policy = mock(SharingPolicy.class);
     replanner = mock(Planner.class);
-    
+
     when(clock.getTime()).thenReturn(1L);
   }
-  
+
   @After
   public void tearDown() {
     resCalc = null;
     minAlloc = null;
     maxAlloc = null;
     totalCapacity = null;
-    
+
     clock = null;
     queueMetrics = null;
     policy = null;
     replanner = null;
   }
-  
+
   @Test
   public void testAddReservation() {
     Plan plan =
@@ -111,13 +111,13 @@ public class TestInMemoryPlan {
     }
     doAssertions(plan, rAllocation);
     for (int i = 0; i < alloc.length; i++) {
-      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i]), (alloc[i])),
+      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i])),
           plan.getTotalCommittedResources(start + i));
-      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i]), (alloc[i])),
+      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i])),
           plan.getConsumptionForUser(user, start + i));
     }
   }
-  
+
   @Test
   public void testAddEmptyReservation() {
     Plan plan =
@@ -142,7 +142,7 @@ public class TestInMemoryPlan {
       Assert.fail(e.getMessage());
     }
   }
-  
+
   @Test
   public void testAddReservationAlreadyExists() {
     // First add a reservation
@@ -169,12 +169,12 @@ public class TestInMemoryPlan {
     }
     doAssertions(plan, rAllocation);
     for (int i = 0; i < alloc.length; i++) {
-      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i]), (alloc[i])),
+      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i])),
           plan.getTotalCommittedResources(start + i));
-      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i]), (alloc[i])),
+      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i])),
           plan.getConsumptionForUser(user, start + i));
     }
-    
+
     // Try to add it again
     try {
       plan.addReservation(rAllocation);
@@ -186,7 +186,7 @@ public class TestInMemoryPlan {
     }
     doAssertions(plan, rAllocation);
   }
-  
+
   @Test
   public void testUpdateReservation() {
     Plan plan =
@@ -213,12 +213,12 @@ public class TestInMemoryPlan {
     }
     doAssertions(plan, rAllocation);
     for (int i = 0; i < alloc.length; i++) {
-      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i]), (alloc[i])),
+      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i])),
           plan.getTotalCommittedResources(start + i));
-      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i]), (alloc[i])),
+      Assert.assertEquals(Resource.newInstance(1024 * (alloc[i]), (alloc[i])),
           plan.getConsumptionForUser(user, start + i));
     }
-    
+
     // Now update it
     start = 110;
     int[] updatedAlloc = { 0, 5, 10, 10, 5, 0 };
@@ -238,13 +238,13 @@ public class TestInMemoryPlan {
     for (int i = 0; i < updatedAlloc.length; i++) {
       Assert.assertEquals(
           Resource.newInstance(1024 * (updatedAlloc[i] + i), updatedAlloc[i]
-              + i, updatedAlloc[i] + i), plan.getTotalCommittedResources(start + i));
+              + i), plan.getTotalCommittedResources(start + i));
       Assert.assertEquals(
           Resource.newInstance(1024 * (updatedAlloc[i] + i), updatedAlloc[i]
-              + i, updatedAlloc[i] + i), plan.getConsumptionForUser(user, start + i));
+              + i), plan.getConsumptionForUser(user, start + i));
     }
   }
-  
+
   @Test
   public void testUpdateNonExistingReservation() {
     Plan plan =
@@ -274,7 +274,7 @@ public class TestInMemoryPlan {
     }
     Assert.assertNull(plan.getReservationById(reservationID));
   }
-  
+
   @Test
   public void testDeleteReservation() {
     // First add a reservation
@@ -302,13 +302,13 @@ public class TestInMemoryPlan {
     doAssertions(plan, rAllocation);
     for (int i = 0; i < alloc.length; i++) {
       Assert.assertEquals(
-          Resource.newInstance(1024 * (alloc[i] + i), (alloc[i] + i), (alloc[i] + i)),
+          Resource.newInstance(1024 * (alloc[i] + i), (alloc[i] + i)),
           plan.getTotalCommittedResources(start + i));
       Assert.assertEquals(
-          Resource.newInstance(1024 * (alloc[i] + i), (alloc[i] + i), (alloc[i] + i)),
+          Resource.newInstance(1024 * (alloc[i] + i), (alloc[i] + i)),
           plan.getConsumptionForUser(user, start + i));
     }
-    
+
     // Now delete it
     try {
       plan.deleteReservation(reservationID);
@@ -323,7 +323,7 @@ public class TestInMemoryPlan {
           plan.getConsumptionForUser(user, start + i));
     }
   }
-  
+
   @Test
   public void testDeleteNonExistingReservation() {
     Plan plan =
@@ -343,7 +343,7 @@ public class TestInMemoryPlan {
     }
     Assert.assertNull(plan.getReservationById(reservationID));
   }
-  
+
   @Test
   public void testArchiveCompletedReservations() {
     Plan plan =
@@ -372,13 +372,13 @@ public class TestInMemoryPlan {
     doAssertions(plan, rAllocation);
     for (int i = 0; i < alloc1.length; i++) {
       Assert.assertEquals(
-          Resource.newInstance(1024 * (alloc1[i]), (alloc1[i]), (alloc1[i])),
+          Resource.newInstance(1024 * (alloc1[i]), (alloc1[i])),
           plan.getTotalCommittedResources(start + i));
       Assert.assertEquals(
-          Resource.newInstance(1024 * (alloc1[i]), (alloc1[i]), (alloc1[i])),
+          Resource.newInstance(1024 * (alloc1[i]), (alloc1[i])),
           plan.getConsumptionForUser(user, start + i));
     }
-    
+
     // Now add another one
     ReservationId reservationID2 =
         ReservationSystemTestUtil.getNewReservationId();
@@ -402,12 +402,12 @@ public class TestInMemoryPlan {
     for (int i = 0; i < alloc2.length; i++) {
       Assert.assertEquals(
           Resource.newInstance(1024 * (alloc1[i] + alloc2[i] + i), alloc1[i]
-              + alloc2[i] + i, alloc1[i] + alloc2[i] + i), plan.getTotalCommittedResources(start + i));
+              + alloc2[i] + i), plan.getTotalCommittedResources(start + i));
       Assert.assertEquals(
           Resource.newInstance(1024 * (alloc1[i] + alloc2[i] + i), alloc1[i]
-              + alloc2[i] + i, alloc1[i] + alloc2[i] + i), plan.getConsumptionForUser(user, start + i));
+              + alloc2[i] + i), plan.getConsumptionForUser(user, start + i));
     }
-    
+
     // Now archive completed reservations
     when(clock.getTime()).thenReturn(106L);
     when(policy.getValidWindow()).thenReturn(1L);
@@ -422,10 +422,10 @@ public class TestInMemoryPlan {
     Assert.assertNull(plan.getReservationById(reservationID2));
     for (int i = 0; i < alloc1.length; i++) {
       Assert.assertEquals(
-          Resource.newInstance(1024 * (alloc1[i]), (alloc1[i]), (alloc1[i])),
+          Resource.newInstance(1024 * (alloc1[i]), (alloc1[i])),
           plan.getTotalCommittedResources(start + i));
       Assert.assertEquals(
-          Resource.newInstance(1024 * (alloc1[i]), (alloc1[i]), (alloc1[i])),
+          Resource.newInstance(1024 * (alloc1[i]), (alloc1[i])),
           plan.getConsumptionForUser(user, start + i));
     }
     when(clock.getTime()).thenReturn(107L);
@@ -444,7 +444,7 @@ public class TestInMemoryPlan {
           plan.getConsumptionForUser(user, start + i));
     }
   }
-  
+
   private void doAssertions(Plan plan, ReservationAllocation rAllocation) {
     ReservationId reservationID = rAllocation.getReservationId();
     Assert.assertNotNull(plan.getReservationById(reservationID));
@@ -458,7 +458,7 @@ public class TestInMemoryPlan {
     Assert.assertEquals(planName, plan.getQueueName());
     Assert.assertTrue(plan.getMoveOnExpiry());
   }
-  
+
   private ReservationDefinition createSimpleReservationDefinition(long arrival,
       long deadline, long duration, Collection<ReservationRequest> resources) {
     // create a request with a single atomic ask
@@ -471,7 +471,7 @@ public class TestInMemoryPlan {
     rDef.setDeadline(deadline);
     return rDef;
   }
-  
+
   private Map<ReservationInterval, ReservationRequest> generateAllocation(
       int startTime, int[] alloc, boolean isStep) {
     Map<ReservationInterval, ReservationRequest> req =
@@ -484,11 +484,11 @@ public class TestInMemoryPlan {
         numContainers = alloc[i];
       }
       ReservationRequest rr =
-          ReservationRequest.newInstance(Resource.newInstance(1024, 1, 1),
+          ReservationRequest.newInstance(Resource.newInstance(1024, 1),
               (numContainers));
       req.put(new ReservationInterval(startTime + i, startTime + i + 1), rr);
     }
     return req;
   }
-  
+
 }

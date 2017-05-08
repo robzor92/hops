@@ -46,21 +46,21 @@ import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import com.google.inject.Inject;
 
 class NodesPage extends RmView {
-  
+
   static class NodesBlock extends HtmlBlock {
     final ResourceManager rm;
     private static final long BYTES_IN_MB = 1024 * 1024;
-    
+
     @Inject
     NodesBlock(ResourceManager rm, ViewContext ctx) {
       super(ctx);
       this.rm = rm;
     }
-    
+
     @Override
     protected void render(Block html) {
       html._(MetricsOverviewTable.class);
-      
+
       ResourceScheduler sched = rm.getResourceScheduler();
       String type = $(NODE_STATE);
       String labelFilter = $(NODE_LABEL, CommonNodeLabelsManager.ANY).trim();
@@ -78,8 +78,8 @@ class NodesPage extends RmView {
               .th(".mem", "Mem Avail")
               .th(".vcores", "VCores Used")
               .th(".vcores", "VCores Avail")
-              .th(".gpus", "Gpus Used")
-              .th(".gpus", "Gpus Avail")
+              .th(".gpus", "GPUs Used")
+              .th(".gpus", "GPUs Avail")
               .th(".nodeManagerVersion", "Version")._()._().tbody();
       NodeState stateFilter = null;
       if (type != null && !type.isEmpty()) {
@@ -89,14 +89,14 @@ class NodesPage extends RmView {
       boolean isInactive = false;
       if (stateFilter != null) {
         switch (stateFilter) {
-          case DECOMMISSIONED:
-          case LOST:
-          case REBOOTED:
-            rmNodes = this.rm.getRMContext().getInactiveRMNodes().values();
-            isInactive = true;
-            break;
-          default:
-            LOG.debug("Unexpected state filter for inactive RM node");
+        case DECOMMISSIONED:
+        case LOST:
+        case REBOOTED:
+          rmNodes = this.rm.getRMContext().getInactiveRMNodes().values();
+          isInactive = true;
+          break;
+        default:
+          LOG.debug("Unexpected state filter for inactive RM node");
         }
       }
       for (RMNode ni : rmNodes) {
@@ -153,7 +153,7 @@ class NodesPage extends RmView {
       tbody._()._();
     }
   }
-  
+
   @Override
   protected void preHead(Page.HTML<_> html) {
     commonPreHead(html);
@@ -168,12 +168,12 @@ class NodesPage extends RmView {
     setTableStyles(html, "nodes", ".healthStatus {width:10em}",
         ".healthReport {width:10em}");
   }
-  
+
   @Override
   protected Class<? extends SubView> content() {
     return NodesBlock.class;
   }
-  
+
   private String nodesTableInit() {
     StringBuilder b = tableInit().append(", aoColumnDefs: [");
     b.append("{'bSearchable': false, 'aTargets': [ 7 ]}");

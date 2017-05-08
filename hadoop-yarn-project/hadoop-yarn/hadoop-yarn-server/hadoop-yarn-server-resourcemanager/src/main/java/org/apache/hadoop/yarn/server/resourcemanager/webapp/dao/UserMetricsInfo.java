@@ -46,9 +46,9 @@ public class UserMetricsInfo {
   protected long reservedVirtualCores;
   protected long pendingVirtualCores;
   protected long allocatedVirtualCores;
-  protected long reservedGpus;
-  protected long pendingGpus;
-  protected long allocatedGpus;
+  protected long reservedGPUs;
+  protected long pendingGPUs;
+  protected long allocatedGPUs;
 
 
   @XmlTransient
@@ -85,9 +85,9 @@ public class UserMetricsInfo {
       this.pendingVirtualCores = userMetrics.getPendingVirtualCores();
       this.allocatedVirtualCores = userMetrics.getAllocatedVirtualCores();
 
-      this.reservedGpus= userMetrics.getReservedGpus();
-      this.pendingGpus = userMetrics.getPendingGpus();
-      this.allocatedGpus = userMetrics.getAllocatedGpus();
+      this.reservedGPUs= userMetrics.getReservedGPUs();
+      this.pendingGPUs = userMetrics.getPendingGPUs();
+      this.allocatedGPUs = userMetrics.getAllocatedGPUs();
     }
   }
 
@@ -143,16 +143,16 @@ public class UserMetricsInfo {
     return this.pendingVirtualCores;
   }
 
-  public long getReservedGpus() {
-    return this.reservedGpus;
+  public long getReservedGPUs() {
+    return this.reservedGPUs;
   }
 
-  public long getAllocatedGpus() {
-    return this.allocatedGpus;
+  public long getAllocatedGPUs() {
+    return this.allocatedGPUs;
   }
 
-  public long getPendingGpus() {
-    return this.pendingGpus;
+  public long getPendingGPUs() {
+    return this.pendingGPUs;
   }
 
   public int getReservedContainers() {

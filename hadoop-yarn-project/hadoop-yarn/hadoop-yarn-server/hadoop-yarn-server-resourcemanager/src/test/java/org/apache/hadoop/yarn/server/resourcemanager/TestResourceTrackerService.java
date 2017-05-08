@@ -318,7 +318,7 @@ public class TestResourceTrackerService {
     RegisterNodeManagerRequest req = Records.newRecord(
         RegisterNodeManagerRequest.class);
     NodeId nodeId = NodeId.newInstance("host2", 1234);
-    Resource capability = BuilderUtils.newResource(1024, 1, 1);
+    Resource capability = BuilderUtils.newResource(1024, 1);
     req.setResource(capability);
     req.setNodeId(nodeId);
     req.setHttpPort(1234);
@@ -348,7 +348,7 @@ public class TestResourceTrackerService {
     RegisterNodeManagerRequest req = Records.newRecord(
         RegisterNodeManagerRequest.class);
     NodeId nodeId = NodeId.newInstance("host2", 1234);
-    Resource capability = BuilderUtils.newResource(1024, 1, 1);
+    Resource capability = BuilderUtils.newResource(1024, 1);
     req.setResource(capability);
     req.setNodeId(nodeId);
     req.setHttpPort(1234);
@@ -373,7 +373,6 @@ public class TestResourceTrackerService {
     io.hops.metadata.yarn.entity.Resource resource = resourcesInDb.get(nodeId.toString());
     Assert.assertEquals(1024, resource.getMemory());
     Assert.assertEquals(1, resource.getVirtualCores());
-    //TODO GPU too!
     //pending event
     List<PendingEvent> pendingEventsInDb = DBUtilityTests.getAllPendingEvents();
     Assert.assertEquals(1, pendingEventsInDb.size());
@@ -457,7 +456,7 @@ public class TestResourceTrackerService {
     RegisterNodeManagerRequest req = Records.newRecord(
         RegisterNodeManagerRequest.class);
     NodeId nodeId = NodeId.newInstance("host2", 1234);
-    Resource capability = BuilderUtils.newResource(1024, 1, 1);
+    Resource capability = BuilderUtils.newResource(1024, 1);
     req.setResource(capability);
     req.setNodeId(nodeId);
     req.setHttpPort(1234);
@@ -516,7 +515,6 @@ public class TestResourceTrackerService {
     Configuration conf = new Configuration();
     conf.set(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, "2048");
     conf.set(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, "4");
-    conf.set(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_GPUS, "0");
     rm = new MockRM(conf);
     rm.start();
 
@@ -527,7 +525,7 @@ public class TestResourceTrackerService {
     NodeId nodeId = BuilderUtils.newNodeId("host", 1234);
     req.setNodeId(nodeId);
 
-    Resource capability = BuilderUtils.newResource(1024, 1, 1);
+    Resource capability = BuilderUtils.newResource(1024, 1);
     req.setResource(capability);
     RegisterNodeManagerResponse response1 =
         resourceTrackerService.registerNodeManager(req);
@@ -535,7 +533,6 @@ public class TestResourceTrackerService {
     
     capability.setMemory(2048);
     capability.setVirtualCores(1);
-    capability.setGPUs((1));
     req.setResource(capability);
     RegisterNodeManagerResponse response2 =
         resourceTrackerService.registerNodeManager(req);
@@ -543,7 +540,6 @@ public class TestResourceTrackerService {
     
     capability.setMemory(1024);
     capability.setVirtualCores(4);
-    capability.setGPUs(0);
     req.setResource(capability);
     RegisterNodeManagerResponse response3 =
         resourceTrackerService.registerNodeManager(req);
@@ -551,7 +547,6 @@ public class TestResourceTrackerService {
     
     capability.setMemory(2048);
     capability.setVirtualCores(4);
-    capability.setGPUs(0);
     req.setResource(capability);
     RegisterNodeManagerResponse response4 =
         resourceTrackerService.registerNodeManager(req);
@@ -650,7 +645,7 @@ public class TestResourceTrackerService {
         NMContainerStatus.newInstance(
           ContainerId.newContainerId(
             ApplicationAttemptId.newInstance(app.getApplicationId(), 2), 1),
-          ContainerState.COMPLETE, Resource.newInstance(1024, 1, 1),
+          ContainerState.COMPLETE, Resource.newInstance(1024, 1),
           "Dummy Completed", 0, Priority.newInstance(10), 1234);
     rm.getResourceTrackerService().handleNMContainerStatus(report, null);
     verify(handler, never()).handle((Event) any());
@@ -661,7 +656,7 @@ public class TestResourceTrackerService {
     currentAttempt.setMasterContainer(null);
     report = NMContainerStatus.newInstance(
           ContainerId.newContainerId(currentAttempt.getAppAttemptId(), 0),
-          ContainerState.COMPLETE, Resource.newInstance(1024, 1, 1),
+          ContainerState.COMPLETE, Resource.newInstance(1024, 1),
           "Dummy Completed", 0, Priority.newInstance(10), 1234);
     rm.getResourceTrackerService().handleNMContainerStatus(report, null);
     verify(handler, never()).handle((Event)any());
@@ -673,7 +668,7 @@ public class TestResourceTrackerService {
     report = NMContainerStatus.newInstance(
           ContainerId.newContainerId(
             ApplicationAttemptId.newInstance(app.getApplicationId(), 2), 1),
-          ContainerState.COMPLETE, Resource.newInstance(1024, 1, 1),
+          ContainerState.COMPLETE, Resource.newInstance(1024, 1),
           "Dummy Completed", 0, Priority.newInstance(10), 1234);
     try {
       rm.getResourceTrackerService().handleNMContainerStatus(report, null);
@@ -688,7 +683,7 @@ public class TestResourceTrackerService {
     currentAttempt.setMasterContainer(null);
     report = NMContainerStatus.newInstance(
       ContainerId.newContainerId(currentAttempt.getAppAttemptId(), 0),
-      ContainerState.COMPLETE, Resource.newInstance(1024, 1, 1),
+      ContainerState.COMPLETE, Resource.newInstance(1024, 1),
       "Dummy Completed", 0, Priority.newInstance(10), 1234);
     try {
       rm.getResourceTrackerService().handleNMContainerStatus(report, null);
@@ -760,7 +755,7 @@ public class TestResourceTrackerService {
     // reconnect of node with changed capability and running applications
     List<ApplicationId> runningApps = new ArrayList<ApplicationId>();
     runningApps.add(ApplicationId.newInstance(1, 0));
-    nm1 = rm.registerNode("host2:5678", 15360, 2, 2, runningApps);
+    nm1 = rm.registerNode("host2:5678", 15360, 2, runningApps);
     rm.drainEvents();
     response = nm1.nodeHeartbeat(true);
     rm.drainEvents();
