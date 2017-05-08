@@ -597,7 +597,7 @@ public class TestAppManager{
     Assert.assertTrue(msg.contains("vcoreSeconds=64"));
     Assert.assertTrue(msg.contains("preemptedAMContainers=1"));
     Assert.assertTrue(msg.contains("preemptedNonAMContainers=10"));
-    Assert.assertTrue(msg.contains("preemptedResources=<memory:1234\\, vCores:56>"));
+    Assert.assertTrue(msg.contains("preemptedResources=<memory:1234\\, vCores:56\\, gpus:56>"));
     Assert.assertTrue(msg.contains("applicationType=MAPREDUCE"));
  }
 
