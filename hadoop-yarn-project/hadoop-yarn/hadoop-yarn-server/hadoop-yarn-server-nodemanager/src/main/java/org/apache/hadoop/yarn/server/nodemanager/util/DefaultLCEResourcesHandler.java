@@ -65,7 +65,6 @@ public class DefaultLCEResourcesHandler implements LCEResourcesHandler {
   
   @Override
   public void recoverDeviceControlSystem(ContainerId containerId) {
-    throw new UnsupportedCodecException("Only supports device allocation " +
-        "recovery for Cgroup containers");
+    LOG.warn("DefaultLCEResourcesHandler does not support device recovery");
   }
 }
