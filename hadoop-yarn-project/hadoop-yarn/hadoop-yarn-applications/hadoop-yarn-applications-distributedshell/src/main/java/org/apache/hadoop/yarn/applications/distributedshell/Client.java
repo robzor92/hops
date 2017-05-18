@@ -409,7 +409,7 @@ public class Client {
           + " exiting."
           + " Specified containerMemory=" + containerMemory
           + ", containerVirtualCores=" + containerVirtualCores
-          + ", containerGpuCores=" + containerGPUs
+          + ", containerGPUs=" + containerGPUs
           + ", numContainer=" + numContainers);
     }
     
@@ -631,6 +631,7 @@ public class Client {
     // Set params for Application Master
     vargs.add("--container_memory " + String.valueOf(containerMemory));
     vargs.add("--container_vcores " + String.valueOf(containerVirtualCores));
+    vargs.add("--container_gpus " + String.valueOf(containerGPUs));
     vargs.add("--num_containers " + String.valueOf(numContainers));
     if (null != nodeLabelExpression) {
       appContext.setNodeLabelExpression(nodeLabelExpression);

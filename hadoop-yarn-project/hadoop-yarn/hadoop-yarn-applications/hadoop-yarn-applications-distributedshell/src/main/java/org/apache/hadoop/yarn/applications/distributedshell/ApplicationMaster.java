@@ -685,7 +685,7 @@ public class ApplicationMaster {
     // and we need to release containers
     for (Thread launchThread : launchThreads) {
       try {
-        launchThread.join(10000);
+        launchThread.join(30000);
       } catch (InterruptedException e) {
         LOG.info("Exception thrown in thread join: " + e.getMessage());
         e.printStackTrace();
@@ -810,7 +810,7 @@ public class ApplicationMaster {
             + allocatedContainer.getResource().getMemory()
             + ", containerResourceVirtualCores"
             + allocatedContainer.getResource().getVirtualCores()
-            + ", containerResourceGpuCores"
+            + ", containerResourceGPUs"
             + allocatedContainer.getResource().getGPUs());
         // + ", containerToken"
         // +allocatedContainer.getContainerToken().getIdentifier().toString());
@@ -1042,6 +1042,7 @@ public class ApplicationMaster {
       ContainerLaunchContext ctx = ContainerLaunchContext.newInstance(
         localResources, shellEnv, commands, null, allTokens.duplicate(), null);
       containerListener.addContainer(container.getId(), container);
+      LOG.info("LAUNCH CONTAINER!!! = " + container.getId());
       nmClientAsync.startContainerAsync(container, ctx);
     }
   }

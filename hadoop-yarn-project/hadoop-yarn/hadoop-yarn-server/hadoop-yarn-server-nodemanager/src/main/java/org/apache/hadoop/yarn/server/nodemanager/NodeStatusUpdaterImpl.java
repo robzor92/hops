@@ -154,6 +154,10 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
     if(conf.getBoolean(YarnConfiguration.NM_GPU_RESOURCE_ENABLED,
         YarnConfiguration.DEFAULT_NM_GPU_RESOURCE_ENABLED)) {
       gpus = NodeManagerHardwareUtils.getNodeGPUs(conf);
+    } else {
+      gpus = conf.getInt(
+              YarnConfiguration.NM_GPUS,
+              YarnConfiguration.DEFAULT_NM_GPUS);
     }
 
     this.totalResource = Resource.newInstance(memoryMb, virtualCores, gpus);

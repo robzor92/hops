@@ -137,8 +137,11 @@ public class ContainersMonitorImpl extends AbstractService implements
         .DEFAULT_NM_GPU_RESOURCE_ENABLED);
     if(gpuEnabled) {
       configuredGPUsForContainers = NodeManagerHardwareUtils.getNodeGPUs(conf);
+    } else {
+      configuredGPUsForContainers = conf.getInt(
+              YarnConfiguration.NM_GPUS,
+              YarnConfiguration.DEFAULT_NM_GPUS);
     }
-
     
     // Setting these irrespective of whether checks are enabled. Required in
     // the UI.
