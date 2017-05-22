@@ -689,6 +689,7 @@ public class ApplicationMaster {
       } catch (InterruptedException e) {
         LOG.info("Exception thrown in thread join: " + e.getMessage());
         e.printStackTrace();
+
       }
     }
 
@@ -1042,7 +1043,6 @@ public class ApplicationMaster {
       ContainerLaunchContext ctx = ContainerLaunchContext.newInstance(
         localResources, shellEnv, commands, null, allTokens.duplicate(), null);
       containerListener.addContainer(container.getId(), container);
-      LOG.info("LAUNCH CONTAINER!!! = " + container.getId());
       nmClientAsync.startContainerAsync(container, ctx);
     }
   }
