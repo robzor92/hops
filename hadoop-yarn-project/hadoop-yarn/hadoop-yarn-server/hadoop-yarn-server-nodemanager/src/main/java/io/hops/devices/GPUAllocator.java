@@ -23,7 +23,8 @@ public class GPUAllocator {
   final static Log LOG = LogFactory.getLog(GPUAllocator.class);
   private static final GPUAllocator gpuAllocator = new GPUAllocator();
   
-  private HashSet<Device> availableDevices;
+  private HashSet<Device> configuredAvailableDevices;
+  private HashSet<Device> allAvailableDevices;
   private HashMap<String, HashSet<Device>> containerDeviceAllocation;
   private HashSet<Device> mandatoryDevices;
   private GPUManagementLibrary gpuManagementLibrary;
@@ -37,7 +38,8 @@ public class GPUAllocator {
   }
   
   private GPUAllocator() {
-    availableDevices = new HashSet<>();
+    configuredAvailableDevices = new HashSet<>();
+    allAvailableDevices = new HashSet<>();
     containerDeviceAllocation = new HashMap<>();
     mandatoryDevices = new HashSet<>();
     
@@ -45,7 +47,7 @@ public class GPUAllocator {
       gpuManagementLibrary =
           GPUManagementLibraryLoader.load(GPU_MANAGEMENT_LIBRARY_CLASSNAME);
     } catch(GPUManagementLibraryException | UnsatisfiedLinkError e) {
-      LOG.error("Could not load GPU management library. Is this NodeManager " +
+      LOG.warn("Could not load GPU management library. Is this NodeManager " +
           "supposed to offer its GPUs as a resource? If yes, check " +
           "installation" +
           " setup and make sure libnvidia-ml.so.1 is present in " +
@@ -60,7 +62,8 @@ public class GPUAllocator {
   @VisibleForTesting
   public GPUAllocator(GPUManagementLibrary gpuManagementLibrary, int
       configuredGPUs) {
-    availableDevices = new HashSet<>();
+    configuredAvailableDevices = new HashSet<>();
+    allAvailableDevices = new HashSet<>();
     containerDeviceAllocation = new HashMap<>();
     mandatoryDevices = new HashSet<>();
     
@@ -76,6 +79,7 @@ public class GPUAllocator {
     if(initialized == false) {
       initialized = gpuManagementLibrary.initialize();
       initAvailableDevices(configuredGPUs);
+      initAllAvailableDevices();
       initMandatoryDevices();
     }
     return this.initialized;
@@ -105,15 +109,23 @@ public class GPUAllocator {
    * /dev/nvidia-uvm
    * /dev/nvidia-uvm-tools
    */
-  //TODO pattern match validator, expecting device numbers to be on form of (major:minor)
   private void initMandatoryDevices() {
-    String[] mandatoryDeviceIds = gpuManagementLibrary
-        .queryMandatoryDevices().split(" ");
-    for(int i = 0; i < mandatoryDeviceIds.length; i++) {
-      String[] majorMinorPair = mandatoryDeviceIds[i].split(":");
-      mandatoryDevices.add(new Device(
-          Integer.parseInt(majorMinorPair[0]),
-          Integer.parseInt(majorMinorPair[1])));
+    String mandatoryDeviceIds = gpuManagementLibrary
+            .queryMandatoryDevices();
+    if (!mandatoryDeviceIds.equals("")) {
+      String[] mandatoryDeviceIdsArr = mandatoryDeviceIds.split(" ");
+      for (int i = 0; i < mandatoryDeviceIdsArr.length; i++) {
+        String[] majorMinorPair = mandatoryDeviceIdsArr[i].split(":");
+        try {
+          Device mandatoryDevice = new Device(
+                  Integer.parseInt(majorMinorPair[0]),
+                  Integer.parseInt(majorMinorPair[1]));
+          mandatoryDevices.add(mandatoryDevice);
+          LOG.info("Found mandatory GPU device " + mandatoryDevice.toString());
+        } catch (NumberFormatException e) {
+          LOG.error("Unexpected format for major:minor device numbers: " + majorMinorPair[0] + ":" + majorMinorPair[1]);
+        }
+      }
     }
   }
   
@@ -121,14 +133,31 @@ public class GPUAllocator {
    * Queries NVML to discover device numbers for available Nvidia gpus that
    * may be scheduled and isolated for containers
    */
-  //TODO pattern match validator, expecting device numbers to be on form of (major:minor)
   private void initAvailableDevices(int configuredGPUs) {
-    String[] availableDeviceIds = gpuManagementLibrary
-        .queryAvailableDevices(configuredGPUs).split(" ");
-    for(int i = 0; i < availableDeviceIds.length; i++) {
-      String[] majorMinorPair = availableDeviceIds[i].split(":");
-      availableDevices.add(new Device(Integer.parseInt
-          (majorMinorPair[0]), Integer.parseInt(majorMinorPair[1])));
+    String availableDeviceIds = gpuManagementLibrary
+            .queryAvailableDevices(configuredGPUs);
+    if (!availableDeviceIds.equals("")) {
+      String[] availableDeviceIdsArr = availableDeviceIds.split(" ");
+      for (int i = 0; i < availableDeviceIdsArr.length; i++) {
+        String[] majorMinorPair = availableDeviceIdsArr[i].split(":");
+        try {
+          Device gpuDevice = new Device(
+                  Integer.parseInt(majorMinorPair[0]),
+                  Integer.parseInt(majorMinorPair[1]));
+          configuredAvailableDevices.add(gpuDevice);
+          LOG.info("Found available GPU device " + gpuDevice.toString());
+        } catch (NumberFormatException e) {
+          LOG.error("Unexpected format for major:minor device numbers: " + majorMinorPair[0] + ":" + majorMinorPair[1]);
+        }
+      }
+    }
+  }
+
+  private void initAllAvailableDevices() {
+    int totalNumGPUs= gpuManagementLibrary.getNumGPUs();
+    while(totalNumGPUs != 0) {
+      allAvailableDevices.add(new Device(NVIDIA_GPU_MAJOR_DEVICE_NUMBER, totalNumGPUs-1));
+      totalNumGPUs--;
     }
   }
   
@@ -143,7 +172,9 @@ public class GPUAllocator {
     return mandatoryDevices;
   }
   
-  public HashSet<Device> getAvailableDevices() { return availableDevices; }
+  public HashSet<Device> getAvailableDevices() { return configuredAvailableDevices; }
+
+  public HashSet<Device> getAllAvailableDevices() { return allAvailableDevices; }
   
   /**
    * Finds out which gpus are currently allocated to a container
@@ -177,39 +208,35 @@ public class GPUAllocator {
       containerName, int gpus)
       throws IOException {
     LOG.info("Trying to allocate " + gpus + " GPUs");
-    LOG.info("Currently unallocated GPUs: " + availableDevices.toString());
+    LOG.info("Currently unallocated GPUs: " + configuredAvailableDevices.toString());
     HashSet<Device> currentlyAllocatedGPUs = getAllocatedGPUs();
     LOG.info("Currently allocated GPUs: " + currentlyAllocatedGPUs);
     
-    if(availableDevices.size() >= gpus) {
-      //containing entries for GPUs to deny access to
-      HashSet<Device> devicesToDeny = new HashSet<>();
-      
-      //need to deny access to all currently allocated devices
-      devicesToDeny.addAll(currentlyAllocatedGPUs);
+    if(configuredAvailableDevices.size() >= gpus) {
       
       //selection method for determining which available GPUs to allocate
       HashSet<Device> deviceAllocation = selectDevicesToAllocate(gpus);
   
       //remove allocated GPUs from available
-      availableDevices.removeAll(deviceAllocation);
+      configuredAvailableDevices.removeAll(deviceAllocation);
       
-      LOG.debug("GPUs to allocate for " + containerName + " = " +
+      LOG.info("GPUs to allocate for " + containerName + " = " +
           deviceAllocation);
       
       //save the allocated GPUs
       containerDeviceAllocation.put(containerName, deviceAllocation);
       
       //deny remaining available devices
-      devicesToDeny.addAll(availableDevices);
+      HashSet<Device> devicesToDeny = new HashSet<>(getAllAvailableDevices());
+      devicesToDeny.removeAll(deviceAllocation);
       
-      LOG.debug("GPUs to deny for " + containerName + " = " +
+      LOG.info("GPUs to deny for " + containerName + " = " +
           devicesToDeny);
       return devicesToDeny;
       
     } else {
       throw new IOException("Container " + containerName + " requested " +
-          gpus + " GPUs when only " + availableDevices.size() + " available");
+          gpus + " GPUs when only " + configuredAvailableDevices.size() + " available");
     }
   }
   
@@ -228,7 +255,7 @@ public class GPUAllocator {
   private synchronized HashSet<Device> selectDevicesToAllocate(int gpus) {
     
     HashSet<Device> deviceAllocation = new HashSet<>();
-    Iterator<Device> availableDeviceItr = availableDevices.iterator();
+    Iterator<Device> availableDeviceItr = configuredAvailableDevices.iterator();
     
     TreeSet<Integer> minDeviceNums = new TreeSet<>();
     
@@ -255,11 +282,11 @@ public class GPUAllocator {
    * @param containerName
    */
   public synchronized void release(String containerName) {
-    HashSet<Device> deviceAllocation = containerDeviceAllocation.
-        get(containerName);
-    if(containerDeviceAllocation != null) {
+    if(containerDeviceAllocation != null && containerDeviceAllocation.containsKey(containerName)) {
+      HashSet<Device> deviceAllocation = containerDeviceAllocation.
+              get(containerName);
       containerDeviceAllocation.remove(containerName);
-      availableDevices.addAll(deviceAllocation);
+      configuredAvailableDevices.addAll(deviceAllocation);
       LOG.info("Releasing GPUs " + deviceAllocation + " for container " + containerName);
     }
     else {
@@ -280,14 +307,14 @@ public class GPUAllocator {
     if(allocatedGPUsForContainer.isEmpty()) {
       return;
     }
-    availableDevices.removeAll(allocatedGPUsForContainer);
+    configuredAvailableDevices.removeAll(allocatedGPUsForContainer);
     containerDeviceAllocation.put(containerId, allocatedGPUsForContainer);
     LOG.debug("Recovering " + allocatedGPUsForContainer.size() + "  GPUs for" +
         " " +
         "container " + containerId);
     LOG.debug("Available devices after container " + containerId + " " +
         "recovery" +
-        " = " + availableDevices.size());
+        " = " + configuredAvailableDevices.size());
     LOG.debug("So far recovered allocations = " + containerDeviceAllocation
         .size());
   }
