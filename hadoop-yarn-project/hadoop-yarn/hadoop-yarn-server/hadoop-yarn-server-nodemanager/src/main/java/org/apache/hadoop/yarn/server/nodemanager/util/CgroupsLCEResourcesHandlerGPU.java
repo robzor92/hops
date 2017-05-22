@@ -186,26 +186,20 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
   void init(LinuxContainerExecutor lce, ResourceCalculatorPlugin plugin)
       throws IOException {
     initConfig();
-    if(isGpuSupportEnabled()) {
       int numGPUs = NodeManagerHardwareUtils.getNodeGPUs(plugin, conf);
-      if (numGPUs > 0) {
-        if (gpuAllocator == null || !getGPUAllocator().isInitialized()) {
+        if (getGPUAllocator() == null || !getGPUAllocator().isInitialized()) {
           gpuAllocator = GPUAllocator.getInstance();
-          gpuSupportEnabled = getGPUAllocator().initialize(numGPUs);
+          getGPUAllocator().initialize(numGPUs);
           LOG.info("GPU capabilities detected! " + numGPUs + " gpus");
         }
-      }
-    }
     
     // mount cgroups if requested
     if (cgroupMount && cgroupMountPath != null) {
       ArrayList<String> cgroupKVs = new ArrayList<String>();
       cgroupKVs.add(CONTROLLER_CPU + "=" + cgroupMountPath + "/" +
           CONTROLLER_CPU);
-      if(isGpuSupportEnabled()) {
         cgroupKVs.add(CONTROLLER_DEVICES + "=" + cgroupMountPath + "/" +
             CONTROLLER_DEVICES);
-      }
       lce.mountCgroups(cgroupKVs, cgroupPrefix);
     }
     
@@ -223,12 +217,14 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
       LOG.info("Removing CPU constraints for YARN containers.");
       updateCgroup(CONTROLLER_CPU, "", CPU_QUOTA_US, String.valueOf(-1));
     }
-    
-    //In case of recovery the subsystem should already be prepared
-    if(isGpuSupportEnabled() && !isDeviceSubsystemPrepared()) {
-      prepareDeviceSubsystem();
+
+    boolean isDeviceSubsystemPrepared = isDeviceSubsystemPrepared();
+
+    if(!isDeviceSubsystemPrepared) {
+        prepareDeviceSubsystem();
+      }
     }
-  }
+
   
   boolean isDeviceSubsystemPrepared() throws IOException {
     String path = pathForCgroup(CONTROLLER_DEVICES, "");
@@ -241,8 +237,9 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
       }
       LOG.debug("Device subsystem is prepared");
       return true;
+    } else {
+        throw new IOException("File " + whiteList.getAbsolutePath() + " does not exist, has Cgroups been mounted?");
     }
-    return false;
   }
   
   boolean cpuLimitsExist() throws IOException {
@@ -332,22 +329,22 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
   private void prepareDeviceSubsystem() throws IOException {
     String denyAllDevices = "a *:* rwm";
     updateCgroup(CONTROLLER_DEVICES, "", DEVICES_DENY, denyAllDevices);
-    
+
     for(String defaultDevice: DEFAULT_WHITELIST_ENTRIES) {
       updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, defaultDevice);
     }
-    
-    HashSet<Device> gpuDevices = getGPUAllocator().getAvailableDevices();
-    for(Device gpuDevice: gpuDevices) {
-      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + gpuDevice.toString() +
-          " rwm");
-    }
-    
+
     HashSet<Device> mandatoryDevices = getGPUAllocator().getMandatoryDevices();
-    for(Device mandatoryDevice: mandatoryDevices) {
-      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW,"c " + mandatoryDevice
-          .toString() + " rwm");
+    for (Device mandatoryDevice : mandatoryDevices) {
+      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + mandatoryDevice
+              .toString() + " rwm");
     }
+
+    HashSet<Device> gpuDevices = getGPUAllocator().getAllAvailableDevices();
+    for (Device gpuDevice : gpuDevices) {
+      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + gpuDevice.toString() +
+                " rwm");
+      }
   }
   
   private void updateCgroup(String controller, String groupName, String param,
@@ -503,11 +500,12 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
     Give access only to requested number of GPUs.
     Deny access to all GPU devices except for those that have been allocated.
     A container making use of 0 GPUs should not be able to access any GPUs.
-     */
+    */
+
+    createCgroup(CONTROLLER_DEVICES, containerName);
+
     if(isGpuSupportEnabled()) {
       int containerGPUs = containerResource.getGPUs();
-      createCgroup(CONTROLLER_DEVICES, containerName);
-      
       HashSet<Device> deniedDevices =
           getGPUAllocator().allocate(containerName, containerGPUs);
       
@@ -517,6 +515,16 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
         updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_DENY,
             deviceEntry);
       }
+    } else {
+      //Don't allow access to GPUs when scheduling is not enabled
+      HashSet<Device> gpuDevice =
+              getGPUAllocator().getAllAvailableDevices();
+      LinkedList<String> cgroupGPUDenyEntries = createCgroupDeviceEntry
+              (gpuDevice);
+      for(String deviceEntry: cgroupGPUDenyEntries) {
+        updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_DENY,
+                deviceEntry);
+      }
     }
   }
   
@@ -524,11 +532,9 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
     if (isCpuWeightEnabled()) {
       deleteCgroup(pathForCgroup(CONTROLLER_CPU, containerId.toString()));
     }
-    
-    if(isGpuSupportEnabled()) {
-      deleteCgroup(pathForCgroup(CONTROLLER_DEVICES, containerId.toString()));
-      getGPUAllocator().release(containerId.toString());
-    }
+
+    deleteCgroup(pathForCgroup(CONTROLLER_DEVICES, containerId.toString()));
+    getGPUAllocator().release(containerId.toString());
   }
   
   /*
@@ -552,10 +558,9 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
       sb.append(pathForCgroup(CONTROLLER_CPU, containerName) + "/tasks");
       sb.append("%");
     }
-    if (isGpuSupportEnabled()) {
-      sb.append(pathForCgroup(CONTROLLER_DEVICES, containerName) + "/tasks");
-      sb.append("%");
-    }
+
+    sb.append(pathForCgroup(CONTROLLER_DEVICES, containerName) + "/tasks");
+    sb.append("%");
     
     if (sb.charAt(sb.length() - 1) == '%') {
       sb.deleteCharAt(sb.length() - 1);
