@@ -99,8 +99,8 @@ public class NodeManagerHardwareUtils {
     }
     int discoveredGPUs = plugin.getNumGPUs();
     if(configuredGPUs > discoveredGPUs) {
-      Log.warn("Could not find " + configuredGPUs + " gpus as configured." +
-          " Only discovered " + discoveredGPUs + " gpus" );
+      Log.warn("Could not find " + configuredGPUs + " GPUs as configured." +
+          " Only discovered " + discoveredGPUs + " GPUs" );
     }
     int numGPUs = Math.min(discoveredGPUs, configuredGPUs);
     return numGPUs;

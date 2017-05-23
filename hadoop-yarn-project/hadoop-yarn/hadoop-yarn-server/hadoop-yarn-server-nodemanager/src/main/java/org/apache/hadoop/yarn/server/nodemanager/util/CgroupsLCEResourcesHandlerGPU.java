@@ -334,15 +334,15 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
       updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, defaultDevice);
     }
 
-    HashSet<Device> mandatoryDevices = getGPUAllocator().getMandatoryDevices();
-    for (Device mandatoryDevice : mandatoryDevices) {
-      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + mandatoryDevice
+    HashSet<Device> mandatoryDrivers = getGPUAllocator().getMandatoryDrivers();
+    for (Device mandatoryDriver : mandatoryDrivers) {
+      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + mandatoryDriver
               .toString() + " rwm");
     }
 
-    HashSet<Device> gpuDevices = getGPUAllocator().getAllAvailableDevices();
-    for (Device gpuDevice : gpuDevices) {
-      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + gpuDevice.toString() +
+    HashSet<Device> totalGPUs = getGPUAllocator().getTotalGPUs();
+    for (Device gpu : totalGPUs) {
+      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + gpu.toString() +
                 " rwm");
       }
   }
@@ -534,7 +534,9 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
     }
 
     deleteCgroup(pathForCgroup(CONTROLLER_DEVICES, containerId.toString()));
-    getGPUAllocator().release(containerId.toString());
+    if(isGpuSupportEnabled()) {
+      getGPUAllocator().release(containerId.toString());
+    }
   }
   
   /*

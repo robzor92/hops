@@ -220,6 +220,9 @@ public class TestCgroupsLCEResourcesHandlerGPU {
     // create mock cgroup
     File cgroupMountDirCPU = createMockCgroupMount(cgroupDir, "cpu");
     File cgroupMountDirGPU = createMockCgroupMount(cgroupDir, "devices");
+    File whiteList = new File(cgroupMountDirGPU, "devices.list");
+    FileOutputStream fos1 = FileUtils.openOutputStream(whiteList);
+    fos1.write(("a *:* rwm\n").getBytes());
     
     // create mock mtab
     File mockMtab = createMockMTab(cgroupDir);
@@ -331,6 +334,9 @@ public class TestCgroupsLCEResourcesHandlerGPU {
     // create mock cgroup
     File cgroupMountDirCPU = createMockCgroupMount(cgroupDir, "cpu");
     File cgroupMountDirGPU = createMockCgroupMount(cgroupDir, "devices");
+    File whiteList = new File(cgroupMountDirGPU, "devices.list");
+    FileOutputStream outputStream = FileUtils.openOutputStream(whiteList);
+    outputStream.write(("a *:* rwm\n").getBytes());
     
     // create mock mtab
     File mockMtab = createMockMTab(cgroupDir);
