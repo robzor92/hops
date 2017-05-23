@@ -54,7 +54,7 @@ public abstract class Resource implements Comparable<Resource> {
   @Public
   @Stable
   /**
-   * Backwards compatability
+   * Backwards compatibility without GPUs
    */
   public static Resource newInstance(int memory, int vCores) {
     Resource resource = Records.newRecord(Resource.class);

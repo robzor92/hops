@@ -71,8 +71,8 @@ public class MockNM {
         .getVersion());
   }
   
-  public MockNM(String nodeIdStr, int memory, int vcores, int gcores, ResourceTrackerService resourceTracker) {
-    this(nodeIdStr, memory, vcores, gcores, resourceTracker, YarnVersionInfo.getVersion());
+  public MockNM(String nodeIdStr, int memory, int vcores, int gpus, ResourceTrackerService resourceTracker) {
+    this(nodeIdStr, memory, vcores, gpus, resourceTracker, YarnVersionInfo.getVersion());
   }
 
   public MockNM(String nodeIdStr, int memory, int vcores, int gpus,

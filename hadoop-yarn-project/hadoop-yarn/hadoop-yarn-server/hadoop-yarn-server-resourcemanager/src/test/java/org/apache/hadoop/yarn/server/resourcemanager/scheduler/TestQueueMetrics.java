@@ -357,27 +357,27 @@ public class TestQueueMetrics {
   }
   
   public static void checkResources(MetricsSource source, int allocatedMB,
-      int allocatedCores, int allocatedGCores, int allocCtnrs, long aggreAllocCtnrs,
-      long aggreReleasedCtnrs, int availableMB, int availableCores, int availableGCores, int pendingMB,
-      int pendingCores, int pendingGCores, int pendingCtnrs, int reservedMB, int reservedCores,
-      int reservedGCores, int reservedCtnrs) {
+      int allocatedCores, int allocatedGPUs, int allocCtnrs, long aggreAllocCtnrs,
+      long aggreReleasedCtnrs, int availableMB, int availableCores, int availableGPUs, int pendingMB,
+      int pendingCores, int pendingGPUs, int pendingCtnrs, int reservedMB, int reservedCores,
+      int reservedGPUs, int reservedCtnrs) {
     MetricsRecordBuilder rb = getMetrics(source);
     assertGauge("AllocatedMB", allocatedMB, rb);
     assertGauge("AllocatedVCores", allocatedCores, rb);
-    assertGauge("AllocatedGPUs", allocatedGCores, rb);
+    assertGauge("AllocatedGPUs", allocatedGPUs, rb);
     assertGauge("AllocatedContainers", allocCtnrs, rb);
     assertCounter("AggregateContainersAllocated", aggreAllocCtnrs, rb);
     assertCounter("AggregateContainersReleased", aggreReleasedCtnrs, rb);
     assertGauge("AvailableMB", availableMB, rb);
     assertGauge("AvailableVCores", availableCores, rb);
-    assertGauge("AvailableGPUs", availableGCores, rb);
+    assertGauge("AvailableGPUs", availableGPUs, rb);
     assertGauge("PendingMB", pendingMB, rb);
     assertGauge("PendingVCores", pendingCores, rb);
-    assertGauge("PendingGPUs", pendingGCores, rb);
+    assertGauge("PendingGPUs", pendingGPUs, rb);
     assertGauge("PendingContainers", pendingCtnrs, rb);
     assertGauge("ReservedMB", reservedMB, rb);
     assertGauge("ReservedVCores", reservedCores, rb);
-    assertGauge("ReservedGPUs", reservedGCores, rb);
+    assertGauge("ReservedGPUs", reservedGPUs, rb);
     assertGauge("ReservedContainers", reservedCtnrs, rb);
   }
   

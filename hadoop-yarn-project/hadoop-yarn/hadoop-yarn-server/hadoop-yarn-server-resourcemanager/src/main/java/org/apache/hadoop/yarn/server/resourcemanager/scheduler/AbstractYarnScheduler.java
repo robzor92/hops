@@ -616,9 +616,9 @@ public abstract class AbstractYarnScheduler
           maximumAllocation.setVirtualCores(Math.min(
               configuredMaximumAllocation.getVirtualCores(), maxNodeVCores));
         }
-        int nodeGCores = totalResource.getGPUs();
-        if (nodeGCores > maxNodeGPUs) {
-          maxNodeGPUs = nodeGCores;
+        int nodeGPUs = totalResource.getGPUs();
+        if (nodeGPUs > maxNodeGPUs) {
+          maxNodeGPUs = nodeGPUs;
           maximumAllocation.setGPUs(Math.min(
               configuredMaximumAllocation.getGPUs(), maxNodeGPUs));
         }

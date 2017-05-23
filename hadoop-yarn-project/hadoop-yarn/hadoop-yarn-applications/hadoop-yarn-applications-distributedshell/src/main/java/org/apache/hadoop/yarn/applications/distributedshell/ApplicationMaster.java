@@ -608,7 +608,7 @@ public class ApplicationMaster {
     }
 
     if (containerGPUs > maxGPUs) {
-      LOG.info("Container gpu cores specified above max threshold of cluster."
+      LOG.info("Container GPUs specified above max threshold of cluster."
           + " Using max value." + ", specified=" + containerGPUs + ", max="
           + maxGPUs);
       containerGPUs = maxGPUs;

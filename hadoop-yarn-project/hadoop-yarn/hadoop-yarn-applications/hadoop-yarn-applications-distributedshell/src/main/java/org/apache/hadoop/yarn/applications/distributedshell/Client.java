@@ -150,7 +150,7 @@ public class Client {
   private int containerMemory = 10; 
   // Amt. of virtual cores to request for container in which shell script will be executed
   private int containerVirtualCores = 1;
-  // Amt. of gpu cores to request for container in which shell script will be executed
+  // Amt. of GPUs to request for container in which shell script will be executed
   private int containerGPUs = 0;
 
   // No. of containers in which the shell script needs to be executed

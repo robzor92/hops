@@ -195,7 +195,7 @@ public class CapacityScheduler extends
         + ", max should be no smaller than min.");
     }
   
-    // validate scheduler gcores allocation setting
+    // validate scheduler GPU allocation setting
     int minGPUs = conf.getInt(
         YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_GPUS,
         YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_GPUS);
