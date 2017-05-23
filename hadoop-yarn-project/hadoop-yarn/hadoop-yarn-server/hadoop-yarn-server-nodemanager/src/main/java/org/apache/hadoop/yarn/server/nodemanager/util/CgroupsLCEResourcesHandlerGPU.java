@@ -518,7 +518,7 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
     } else {
       //Don't allow access to GPUs when scheduling is not enabled
       HashSet<Device> gpuDevice =
-              getGPUAllocator().getAllAvailableDevices();
+              getGPUAllocator().getTotalGPUs();
       LinkedList<String> cgroupGPUDenyEntries = createCgroupDeviceEntry
               (gpuDevice);
       for(String deviceEntry: cgroupGPUDenyEntries) {
