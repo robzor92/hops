@@ -62,12 +62,17 @@ public class TestGPUAllocator {
         CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
         CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
         customGPUAllocator.initialize(8);
-        HashSet<Device> initialAvailableGPUs = customGPUAllocator.getAvailableDevices();
+        HashSet<Device> initialAvailableGPUs = customGPUAllocator.getConfiguredAvailableGPUs();
+        HashSet<Device> totalGPUs = customGPUAllocator.getTotalGPUs();
+        Assert.assertTrue(totalGPUs.containsAll(initialAvailableGPUs));
+        Assert.assertTrue(initialAvailableGPUs.containsAll(totalGPUs));
+        Assert.assertTrue(totalGPUs.size() == 8);
+        Assert.assertTrue(initialAvailableGPUs.size() == 8);
         int numInitialAvailableGPUs = initialAvailableGPUs.size();
 
         ContainerId firstId = ContainerId.fromString("container_1_1_1_1");
         HashSet<Device> firstAllocation = customGPUAllocator.allocate(firstId.toString(), 4);
-        HashSet<Device> currentlyAvailableDevices = new HashSet<>(customGPUAllocator.getAvailableDevices());
+        HashSet<Device> currentlyAvailableDevices = new HashSet<>(customGPUAllocator.getConfiguredAvailableGPUs());
         Assert.assertEquals(numInitialAvailableGPUs - 4, currentlyAvailableDevices.size());
 
         Assert.assertTrue(currentlyAvailableDevices.equals(firstAllocation));
@@ -78,20 +83,22 @@ public class TestGPUAllocator {
         Assert.assertEquals(4, firstAllocation.size());
 
         Assert.assertEquals(4, secondAllocation.size());
-        Assert.assertEquals(numInitialAvailableGPUs - 8, customGPUAllocator.getAvailableDevices().size());
+        Assert.assertEquals(numInitialAvailableGPUs - 8, customGPUAllocator.getConfiguredAvailableGPUs().size());
 
         customGPUAllocator.release(firstId.toString());
-        Assert.assertEquals(numInitialAvailableGPUs - 4, customGPUAllocator.getAvailableDevices().size());
+        Assert.assertEquals(numInitialAvailableGPUs - 4, customGPUAllocator.getConfiguredAvailableGPUs().size());
 
         customGPUAllocator.release(secondId.toString());
 
-        Assert.assertEquals(numInitialAvailableGPUs, customGPUAllocator.getAvailableDevices().size());
+        Assert.assertEquals(numInitialAvailableGPUs, customGPUAllocator.getConfiguredAvailableGPUs().size());
     
         ContainerId thirdId = ContainerId.fromString("container_1_1_1_2");
         HashSet<Device> thirdAllocation = customGPUAllocator.allocate(thirdId
             .toString(), 2);
         Assert.assertEquals(6, thirdAllocation.size());
-        Assert.assertEquals(6, customGPUAllocator.getAvailableDevices().size());
+
+        Assert.assertEquals(6, customGPUAllocator.getConfiguredAvailableGPUs().size());
+        Assert.assertTrue(customGPUAllocator.getTotalGPUs().size() == 8);
     }
 
     @Test
@@ -100,7 +107,7 @@ public class TestGPUAllocator {
         CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
         customGPUAllocator.initialize(8);
 
-        HashSet<Device> initialAvailableGPUs = new HashSet<>(customGPUAllocator.getAvailableDevices());
+        HashSet<Device> initialAvailableGPUs = new HashSet<>(customGPUAllocator.getConfiguredAvailableGPUs());
         int numInitialAvailableGPUs = initialAvailableGPUs.size();
 
         //First container was allocated 195:0 and 195:1
@@ -114,7 +121,7 @@ public class TestGPUAllocator {
                 "c 0:2 rwm\n";
         customGPUAllocator.recoverAllocation(firstId.toString(), firstDevicesAllow);
 
-        HashSet<Device> availableGPUsAfterFirstRecovery = new HashSet<>(customGPUAllocator.getAvailableDevices());
+        HashSet<Device> availableGPUsAfterFirstRecovery = new HashSet<>(customGPUAllocator.getConfiguredAvailableGPUs());
         Assert.assertFalse(initialAvailableGPUs.equals(availableGPUsAfterFirstRecovery));
         Assert.assertEquals(numInitialAvailableGPUs - 2, availableGPUsAfterFirstRecovery.size());
         Assert.assertFalse(availableGPUsAfterFirstRecovery.contains(device0));
@@ -131,7 +138,7 @@ public class TestGPUAllocator {
                 "c 0:2 rwm\n";
         customGPUAllocator.recoverAllocation(id.toString(), secondDevicesAllow);
 
-        HashSet<Device> availableGPUsAfterSecondRecovery = new HashSet<>(customGPUAllocator.getAvailableDevices());
+        HashSet<Device> availableGPUsAfterSecondRecovery = new HashSet<>(customGPUAllocator.getConfiguredAvailableGPUs());
         Assert.assertFalse(initialAvailableGPUs.equals(availableGPUsAfterSecondRecovery));
         Assert.assertEquals(numInitialAvailableGPUs - 4, availableGPUsAfterSecondRecovery.size());
         Assert.assertFalse(availableGPUsAfterSecondRecovery.contains(device2));
@@ -157,7 +164,9 @@ public class TestGPUAllocator {
         allowedDevices.add(device5);
         allowedDevices.add(device6);
         allowedDevices.add(device7);
-        Assert.assertTrue(customGPUAllocator.getAvailableDevices().isEmpty());
+
+        Assert.assertTrue(customGPUAllocator.getConfiguredAvailableGPUs().isEmpty());
+        Assert.assertTrue(customGPUAllocator.getTotalGPUs().size() == 8);
     }
 
     @Test(expected=IOException.class)
@@ -188,6 +197,6 @@ public class TestGPUAllocator {
             .allocate(firstContainerId.toString(), 0);
 
         Assert.assertTrue(allocation.containsAll
-            (customGPUAllocator.getAvailableDevices()));
+            (customGPUAllocator.getConfiguredAvailableGPUs()));
     }
 }

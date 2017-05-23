@@ -121,7 +121,7 @@ public class GPUAllocator {
                   Integer.parseInt(majorMinorPair[0]),
                   Integer.parseInt(majorMinorPair[1]));
           mandatoryDrivers.add(mandatoryDevice);
-          LOG.info("Found mandatory GPU device " + mandatoryDevice.toString());
+          LOG.info("Found mandatory GPU driver " + mandatoryDevice.toString());
         } catch (NumberFormatException e) {
           LOG.error("Unexpected format for major:minor device numbers: " + majorMinorPair[0] + ":" + majorMinorPair[1]);
         }
@@ -209,12 +209,12 @@ public class GPUAllocator {
   public synchronized HashSet<Device> allocate(String
       containerName, int gpus)
       throws IOException {
-    LOG.info("Trying to allocate " + gpus + " GPUs");
-    LOG.info("Currently unallocated GPUs: " + configuredAvailableGPUs.toString());
-    HashSet<Device> currentlyAllocatedGPUs = getAllocatedGPUs();
-    LOG.info("Currently allocated GPUs: " + currentlyAllocatedGPUs);
     
     if(configuredAvailableGPUs.size() >= gpus) {
+      LOG.info("Trying to allocate " + gpus + " GPUs");
+      LOG.info("Currently unallocated GPUs: " + configuredAvailableGPUs.toString());
+      HashSet<Device> currentlyAllocatedGPUs = getAllocatedGPUs();
+      LOG.info("Currently allocated GPUs: " + currentlyAllocatedGPUs);
       
       //selection method for determining which available GPUs to allocate
       HashSet<Device> gpuAllocation = selectGPUsToAllocate(gpus);

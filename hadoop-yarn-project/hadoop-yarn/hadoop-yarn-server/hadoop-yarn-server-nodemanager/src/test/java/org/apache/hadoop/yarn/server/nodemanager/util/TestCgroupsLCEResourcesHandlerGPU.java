@@ -256,7 +256,7 @@ public class TestCgroupsLCEResourcesHandlerGPU {
     Assert.assertTrue(containerDirGPU.isDirectory());
     Assert.assertTrue(denyFile.exists());
     
-    Assert.assertTrue(gpuAllocator.getAvailableDevices().size() == 6);
+    Assert.assertTrue(gpuAllocator.getConfiguredAvailableGPUs().size() == 6);
     //SECOND ALLOCATION
     HashSet<Device> deviceAllocation1 = gpuAllocator.allocate
         ("test_container", 2);
@@ -386,18 +386,18 @@ public class TestCgroupsLCEResourcesHandlerGPU {
     handler.init(mockLCE, plugin);
     
     //No recovery yet
-    Assert.assertEquals(8, gpuAllocator.getAvailableDevices().size());
+    Assert.assertEquals(8, gpuAllocator.getConfiguredAvailableGPUs().size());
     Assert.assertTrue(listFile1.exists());
     handler.recoverDeviceControlSystem(id1);
-    Assert.assertEquals(6, gpuAllocator.getAvailableDevices().size());
+    Assert.assertEquals(6, gpuAllocator.getConfiguredAvailableGPUs().size());
     Assert.assertTrue(listFile2.exists());
     handler.recoverDeviceControlSystem(id2);
-    Assert.assertEquals(4, gpuAllocator.getAvailableDevices().size());
+    Assert.assertEquals(4, gpuAllocator.getConfiguredAvailableGPUs().size());
     Assert.assertTrue(listFile3.exists());
     handler.recoverDeviceControlSystem(id3);
-    Assert.assertEquals(2, gpuAllocator.getAvailableDevices().size());
+    Assert.assertEquals(2, gpuAllocator.getConfiguredAvailableGPUs().size());
     HashSet<Device> availableGPUs = new HashSet<>(gpuAllocator
-        .getAvailableDevices());
+        .getConfiguredAvailableGPUs());
     Assert.assertTrue(availableGPUs.contains(new Device(195, 6)));
     Assert.assertTrue(availableGPUs.contains(new Device(195, 7)));
     
