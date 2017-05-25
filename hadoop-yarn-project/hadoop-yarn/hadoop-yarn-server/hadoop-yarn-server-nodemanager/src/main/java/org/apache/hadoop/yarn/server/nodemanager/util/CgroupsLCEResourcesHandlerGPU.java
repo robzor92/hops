@@ -186,12 +186,11 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
   void init(LinuxContainerExecutor lce, ResourceCalculatorPlugin plugin)
       throws IOException {
     initConfig();
-      int numGPUs = NodeManagerHardwareUtils.getNodeGPUs(plugin, conf);
-        if (getGPUAllocator() == null || !getGPUAllocator().isInitialized()) {
-          gpuAllocator = GPUAllocator.getInstance();
-          getGPUAllocator().initialize(numGPUs);
-          LOG.info("GPU capabilities detected! " + numGPUs + " GPUs");
-        }
+
+    if (isGpuSupportEnabled() && getGPUAllocator() == null || !getGPUAllocator().isInitialized()) {
+      gpuAllocator = GPUAllocator.getInstance();
+      getGPUAllocator().initialize(conf);
+    }
     
     // mount cgroups if requested
     if (cgroupMount && cgroupMountPath != null) {
