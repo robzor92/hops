@@ -6,6 +6,7 @@ import io.hops.devices.Device;
 import io.hops.devices.GPUAllocator;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -51,7 +52,7 @@ public class TestGPUAllocator {
     private static class CustomGPUAllocator extends GPUAllocator {
 
         public CustomGPUAllocator(GPUManagementLibrary gpuManagementLibrary) {
-            super(gpuManagementLibrary, 8);
+            super(gpuManagementLibrary, new YarnConfiguration());
         }
     }
 
@@ -61,7 +62,9 @@ public class TestGPUAllocator {
 
         CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
         CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
-        customGPUAllocator.initialize(8);
+        YarnConfiguration conf = new YarnConfiguration();
+        conf.setInt(YarnConfiguration.NM_GPUS, 8);
+        customGPUAllocator.initialize(conf);
         HashSet<Device> initialAvailableGPUs = customGPUAllocator.getConfiguredAvailableGPUs();
         HashSet<Device> totalGPUs = customGPUAllocator.getTotalGPUs();
         Assert.assertTrue(totalGPUs.containsAll(initialAvailableGPUs));
@@ -105,7 +108,9 @@ public class TestGPUAllocator {
     public void testGPUAllocatorRecovery() throws IOException{
         CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
         CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
-        customGPUAllocator.initialize(8);
+        YarnConfiguration conf = new YarnConfiguration();
+        conf.setInt(YarnConfiguration.NM_GPUS, 8);
+        customGPUAllocator.initialize(conf);
 
         HashSet<Device> initialAvailableGPUs = new HashSet<>(customGPUAllocator.getConfiguredAvailableGPUs());
         int numInitialAvailableGPUs = initialAvailableGPUs.size();
@@ -174,7 +179,9 @@ public class TestGPUAllocator {
 
         CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
         CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
-        customGPUAllocator.initialize(8);
+        YarnConfiguration conf = new YarnConfiguration();
+        conf.setInt(YarnConfiguration.NM_GPUS, 8);
+        customGPUAllocator.initialize(conf);
 
         ContainerId firstContainerId = ContainerId.fromString("container_1_1_1_1");
         HashSet<Device> firstAllocation = customGPUAllocator.allocate(firstContainerId.toString(), 4);
@@ -190,7 +197,9 @@ public class TestGPUAllocator {
     public void testZeroGPURequestedZeroGPUAllocated() throws IOException {
         CustomGPUmanagementLibrary lib = new CustomGPUmanagementLibrary();
         CustomGPUAllocator customGPUAllocator = new CustomGPUAllocator(lib);
-        customGPUAllocator.initialize(8);
+        YarnConfiguration conf = new YarnConfiguration();
+        conf.setInt(YarnConfiguration.NM_GPUS, 8);
+        customGPUAllocator.initialize(conf);
 
         ContainerId firstContainerId = ContainerId.fromString("container_1_1_1_1");
         HashSet<Device> allocation = customGPUAllocator

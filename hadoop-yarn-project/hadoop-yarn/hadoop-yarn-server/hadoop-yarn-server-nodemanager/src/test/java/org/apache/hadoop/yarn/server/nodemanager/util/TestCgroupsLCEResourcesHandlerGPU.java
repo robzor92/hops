@@ -229,9 +229,12 @@ public class TestCgroupsLCEResourcesHandlerGPU {
     
     ContainerId id = ContainerId.fromString("container_1_1_1_1");
     GPUAllocator gpuAllocator = null;
+
+    conf.setInt(YarnConfiguration.NM_GPUS, 8);
+
     
     gpuAllocator = new GPUAllocator(new
-        CustomGPUmanagementLibrary(), 8);
+        CustomGPUmanagementLibrary(), conf);
     
     Device gpu0 = new Device(195, 0);
     Device gpu1 = new Device(195, 1);
@@ -341,8 +344,12 @@ public class TestCgroupsLCEResourcesHandlerGPU {
     // create mock mtab
     File mockMtab = createMockMTab(cgroupDir);
     handler.setMtabFile(mockMtab.getAbsolutePath());
+
+    conf.setInt(YarnConfiguration.NM_GPUS, 8);
+
     GPUAllocator gpuAllocator = new GPUAllocator(new
-        CustomGPUmanagementLibrary(), 8);
+        CustomGPUmanagementLibrary(), conf);
+
     
     handler.setGPUAllocator(gpuAllocator);
     handler.init(mockLCE, plugin);
@@ -367,10 +374,10 @@ public class TestCgroupsLCEResourcesHandlerGPU {
     File listFile3 = new File(containerDir3, "devices.list");
     FileOutputStream fos3 = FileUtils.openOutputStream(listFile3);
     fos3.write(("c 195:4 rwm\n" + "c 195:5 rwm\n").getBytes());
-    
+    conf.setInt(YarnConfiguration.NM_GPUS, 8);
     gpuAllocator = new GPUAllocator(new
-        CustomGPUmanagementLibrary(), 8);
-    gpuAllocator.initialize(8);
+        CustomGPUmanagementLibrary(), conf);
+    gpuAllocator.initialize(conf);
     handler =
         new CustomCgroupsLCEResourceHandlerGPU();
     conf = new YarnConfiguration();
