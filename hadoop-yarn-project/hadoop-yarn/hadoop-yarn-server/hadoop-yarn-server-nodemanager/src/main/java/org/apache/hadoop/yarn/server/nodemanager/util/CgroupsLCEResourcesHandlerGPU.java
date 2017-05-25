@@ -190,7 +190,7 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
         if (getGPUAllocator() == null || !getGPUAllocator().isInitialized()) {
           gpuAllocator = GPUAllocator.getInstance();
           getGPUAllocator().initialize(numGPUs);
-          LOG.info("GPU capabilities detected! " + numGPUs + " gpus");
+          LOG.info("GPU capabilities detected! " + numGPUs + " GPUs");
         }
     
     // mount cgroups if requested
@@ -334,17 +334,19 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
       updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, defaultDevice);
     }
 
-    HashSet<Device> mandatoryDrivers = getGPUAllocator().getMandatoryDrivers();
-    for (Device mandatoryDriver : mandatoryDrivers) {
-      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + mandatoryDriver
-              .toString() + " rwm");
-    }
+    if(isGpuSupportEnabled()) {
+      HashSet<Device> mandatoryDrivers = getGPUAllocator().getMandatoryDrivers();
+      for (Device mandatoryDriver : mandatoryDrivers) {
+        updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + mandatoryDriver
+                .toString() + " rwm");
+      }
 
-    HashSet<Device> totalGPUs = getGPUAllocator().getTotalGPUs();
-    for (Device gpu : totalGPUs) {
-      updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + gpu.toString() +
+      HashSet<Device> totalGPUs = getGPUAllocator().getTotalGPUs();
+      for (Device gpu : totalGPUs) {
+        updateCgroup(CONTROLLER_DEVICES, "", DEVICES_ALLOW, "c " + gpu.toString() +
                 " rwm");
       }
+    }
   }
   
   private void updateCgroup(String controller, String groupName, String param,
@@ -514,16 +516,6 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
       for(String deviceEntry: cgroupGPUDenyEntries) {
         updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_DENY,
             deviceEntry);
-      }
-    } else {
-      //Don't allow access to GPUs when scheduling is not enabled
-      HashSet<Device> gpuDevice =
-              getGPUAllocator().getTotalGPUs();
-      LinkedList<String> cgroupGPUDenyEntries = createCgroupDeviceEntry
-              (gpuDevice);
-      for(String deviceEntry: cgroupGPUDenyEntries) {
-        updateCgroup(CONTROLLER_DEVICES, containerName, DEVICES_DENY,
-                deviceEntry);
       }
     }
   }

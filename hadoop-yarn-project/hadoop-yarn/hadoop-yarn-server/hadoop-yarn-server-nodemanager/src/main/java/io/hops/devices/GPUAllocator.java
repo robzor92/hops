@@ -209,28 +209,32 @@ public class GPUAllocator {
   public synchronized HashSet<Device> allocate(String
       containerName, int gpus)
       throws IOException {
-    
+    HashSet<Device> gpusToDeny = new HashSet<>(getTotalGPUs());
+
     if(configuredAvailableGPUs.size() >= gpus) {
       LOG.info("Trying to allocate " + gpus + " GPUs");
-      LOG.info("Currently unallocated GPUs: " + configuredAvailableGPUs.toString());
-      HashSet<Device> currentlyAllocatedGPUs = getAllocatedGPUs();
-      LOG.info("Currently allocated GPUs: " + currentlyAllocatedGPUs);
-      
-      //selection method for determining which available GPUs to allocate
-      HashSet<Device> gpuAllocation = selectGPUsToAllocate(gpus);
-  
-      //remove allocated GPUs from available
-      configuredAvailableGPUs.removeAll(gpuAllocation);
-      
-      LOG.info("GPUs to allocate for " + containerName + " = " +
-              gpuAllocation);
-      
-      //save the allocated GPUs
-      containerGPUAllocationMapping.put(containerName, gpuAllocation);
-      
-      //deny remaining available gpus
-      HashSet<Device> gpusToDeny = new HashSet<>(getTotalGPUs());
-      gpusToDeny.removeAll(gpuAllocation);
+
+      if(gpus > 0) {
+
+        LOG.info("Currently unallocated GPUs: " + configuredAvailableGPUs.toString());
+        HashSet<Device> currentlyAllocatedGPUs = getAllocatedGPUs();
+        LOG.info("Currently allocated GPUs: " + currentlyAllocatedGPUs);
+
+        //selection method for determining which available GPUs to allocate
+        HashSet<Device> gpuAllocation = selectGPUsToAllocate(gpus);
+
+        //remove allocated GPUs from available
+        configuredAvailableGPUs.removeAll(gpuAllocation);
+
+        LOG.info("GPUs to allocate for " + containerName + " = " +
+                gpuAllocation);
+
+        //save the allocated GPUs
+        containerGPUAllocationMapping.put(containerName, gpuAllocation);
+
+        //deny remaining available gpus
+        gpusToDeny.removeAll(gpuAllocation);
+      }
       
       LOG.info("GPUs to deny for " + containerName + " = " +
               gpusToDeny);
@@ -306,13 +310,13 @@ public class GPUAllocator {
     }
     configuredAvailableGPUs.removeAll(allocatedGPUsForContainer);
     containerGPUAllocationMapping.put(containerId, allocatedGPUsForContainer);
-    LOG.debug("Recovering " + allocatedGPUsForContainer.size() + "  GPUs for" +
+    LOG.info("Recovering " + allocatedGPUsForContainer.size() + "  GPUs for" +
         " " +
         "container " + containerId);
-    LOG.debug("Available devices after container " + containerId + " " +
+    LOG.info("Available GPUs after container " + containerId + " " +
         "recovery" +
         " = " + configuredAvailableGPUs.size());
-    LOG.debug("So far recovered allocations = " + containerGPUAllocationMapping
+    LOG.debug("So far recovered containers = " + containerGPUAllocationMapping
         .size());
   }
   
