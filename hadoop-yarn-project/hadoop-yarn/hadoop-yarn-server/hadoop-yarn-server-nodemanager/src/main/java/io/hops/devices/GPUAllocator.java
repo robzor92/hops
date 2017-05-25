@@ -8,6 +8,9 @@ import io.hops.GPUManagementLibraryLoader;
 import io.hops.exceptions.GPUManagementLibraryException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.server.nodemanager.util.NodeManagerHardwareUtils;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -60,27 +63,31 @@ public class GPUAllocator {
   }
   
   @VisibleForTesting
-  public GPUAllocator(GPUManagementLibrary gpuManagementLibrary, int
-      configuredGPUs) {
+  public GPUAllocator(GPUManagementLibrary gpuManagementLibrary, Configuration conf) {
     configuredAvailableGPUs = new HashSet<>();
     totalGPUs = new HashSet<>();
     containerGPUAllocationMapping = new HashMap<>();
     mandatoryDrivers = new HashSet<>();
     
     this.gpuManagementLibrary = gpuManagementLibrary;
-    initialize(configuredGPUs);
+    initialize(conf);
   }
   
   /**
    * Initialize the NVML library to check that it was setup correctly
    * @return boolean for success or not
    */
-  public boolean initialize(int configuredGPUs) {
+  public boolean initialize(Configuration conf) {
     if(initialized == false) {
       initialized = gpuManagementLibrary.initialize();
-      initConfiguredGPUs(configuredGPUs);
+      int numGPUs = NodeManagerHardwareUtils.getNodeGPUs(conf);
+      try {
+        initMandatoryDrivers();
+        initConfiguredGPUs(numGPUs);
+      } catch (IOException ioe) {
+        ioe.printStackTrace();
+      }
       initTotalGPUs();
-      initMandatoryDrivers();
     }
     return this.initialized;
   }
@@ -109,7 +116,7 @@ public class GPUAllocator {
    * /dev/nvidia-uvm
    * /dev/nvidia-uvm-tools
    */
-  private void initMandatoryDrivers() {
+  private void initMandatoryDrivers() throws IOException {
     String mandatoryDeviceIds = gpuManagementLibrary
             .queryMandatoryDevices();
     if (!mandatoryDeviceIds.equals("")) {
@@ -126,6 +133,10 @@ public class GPUAllocator {
           LOG.error("Unexpected format for major:minor device numbers: " + majorMinorPair[0] + ":" + majorMinorPair[1]);
         }
       }
+    } else {
+      throw new IOException("Could not discover device numbers for GPU drivers, " +
+              "check driver installation and make sure libnvidia-ml.so.1 is present on " +
+              "LD_LIBRARY_PATH, or disable GPUs in the configuration");
     }
   }
   
@@ -133,7 +144,7 @@ public class GPUAllocator {
    * Queries NVML to discover device numbers for available NVIDIA GPUs that
    * may be scheduled and isolated for containers
    */
-  private void initConfiguredGPUs(int configuredGPUs) {
+  private void initConfiguredGPUs(int configuredGPUs) throws IOException {
     String configuredGPUDeviceIds = gpuManagementLibrary
             .queryAvailableDevices(configuredGPUs);
     if (!configuredGPUDeviceIds.equals("")) {
@@ -150,6 +161,9 @@ public class GPUAllocator {
           LOG.error("Unexpected format for major:minor device numbers: " + majorMinorPair[0] + ":" + majorMinorPair[1]);
         }
       }
+    } else {
+      throw new IOException("Could not discover GPU device numbers, either you enabled GPUs but set NM_GPUS to 0," +
+              " or there is a problem with the installation, check that libnvidia-ml.so.1 is present on LD_LIBRARY_PATH");
     }
   }
 
