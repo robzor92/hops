@@ -285,11 +285,11 @@ public class SchedulerUtils {
         +        resReq.getCapability().getGPUs() >
             +            maximumResource.getGPUs()) {
       throw new InvalidResourceRequestException("Invalid resource request"
-          + ", requested gpus < 0"
-          + ", or requested gpus > max configured"
-          + ", requestedGpus="
+          + ", requested GPUs < 0"
+          + ", or requested GPUs > max configured"
+          + ", requestedGPUs="
           + resReq.getCapability().getGPUs()
-          + ", maxGpus=" + maximumResource.getGPUs());
+          + ", maxGPUs=" + maximumResource.getGPUs());
     }
     String labelExp = resReq.getNodeLabelExpression();
 
