@@ -324,11 +324,11 @@ public class GPUAllocator {
     }
     configuredAvailableGPUs.removeAll(allocatedGPUsForContainer);
     containerGPUAllocationMapping.put(containerId, allocatedGPUsForContainer);
-    LOG.info("Recovering GPUs" + allocatedGPUsForContainer.size() + " for" +
+    LOG.info("Recovering GPUs " + allocatedGPUsForContainer + " for" +
         " container " + containerId);
     LOG.info("Available GPUs after container " + containerId +
         " recovery " + configuredAvailableGPUs);
-    LOG.debug("So far " + containerGPUAllocationMapping.size() + " recovered containers");
+    LOG.info("So far " + containerGPUAllocationMapping.size() + " recovered containers");
   }
   
   /* We are looking for entries of the form:
