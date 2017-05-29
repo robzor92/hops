@@ -52,11 +52,7 @@ public class GPUAllocator {
     } catch(GPUManagementLibraryException | UnsatisfiedLinkError e) {
       LOG.warn("Could not load GPU management library. Is this NodeManager " +
           "supposed to offer its GPUs as a resource? If yes, check " +
-          "installation" +
-          " setup and make sure libnvidia-ml.so.1 is present in " +
-          "LD_LIBRARY_PATH. If no, disable GPUs by setting yarn.nodemanager" +
-          ".resource.gpus.enabled to " +
-          "false." + "\n");
+          "installation and make sure hopsnvml-1.0 is present in java.library.path");
       
       e.printStackTrace();
     }
