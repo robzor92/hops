@@ -152,7 +152,7 @@ public class GPUAllocator {
                   Integer.parseInt(majorMinorPair[0]),
                   Integer.parseInt(majorMinorPair[1]));
           configuredAvailableGPUs.add(gpu);
-          LOG.info("Found available GPU device " + gpu.toString());
+          LOG.info("Found available GPU device " + gpu.toString() + " for scheduling");
         } catch (NumberFormatException e) {
           LOG.error("Unexpected format for major:minor device numbers: " + majorMinorPair[0] + ":" + majorMinorPair[1]);
         }
@@ -170,6 +170,7 @@ public class GPUAllocator {
       totalGPUs.add(new Device(NVIDIA_GPU_MAJOR_DEVICE_NUMBER, totalNumGPUs-1));
       totalNumGPUs--;
     }
+    LOG.info("Total GPUs present on machine " + totalGPUs);
   }
   
   /**
