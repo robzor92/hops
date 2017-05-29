@@ -369,7 +369,7 @@ public class TestResourceTrackerService {
     Assert.assertEquals("RUNNING", rmNode.getCurrentState());
     //resource
     Map<String, io.hops.metadata.yarn.entity.Resource> resourcesInDb = DBUtilityTests.getAllResources();
-    Assert.assertEquals(1, resourcesInDb.size());
+    Assert.assertEquals(2, resourcesInDb.size());
     io.hops.metadata.yarn.entity.Resource resource = resourcesInDb.get(nodeId.toString());
     Assert.assertEquals(1024, resource.getMemory());
     Assert.assertEquals(1, resource.getVirtualCores());

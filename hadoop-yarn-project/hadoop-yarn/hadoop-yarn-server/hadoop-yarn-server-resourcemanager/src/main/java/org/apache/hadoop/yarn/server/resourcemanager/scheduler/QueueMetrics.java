@@ -61,20 +61,20 @@ public class QueueMetrics implements MetricsSource {
 
   @Metric("Allocated memory in MB") MutableGaugeInt allocatedMB;
   @Metric("Allocated CPU in virtual cores") MutableGaugeInt allocatedVCores;
-  @Metric("Allocated GPUs") MutableGaugeInt allocatedGPUs;
+  @Metric("Allocated GPU") MutableGaugeInt allocatedGPUs;
   @Metric("# of allocated containers") MutableGaugeInt allocatedContainers;
   @Metric("Aggregate # of allocated containers") MutableCounterLong aggregateContainersAllocated;
   @Metric("Aggregate # of released containers") MutableCounterLong aggregateContainersReleased;
   @Metric("Available memory in MB") MutableGaugeInt availableMB;
   @Metric("Available CPU in virtual cores") MutableGaugeInt availableVCores;
-  @Metric("Available GPUs") MutableGaugeInt availableGPUs;
+  @Metric("Available GPU") MutableGaugeInt availableGPUs;
   @Metric("Pending memory allocation in MB") MutableGaugeInt pendingMB;
   @Metric("Pending CPU allocation in virtual cores") MutableGaugeInt pendingVCores;
-  @Metric("Pending GPUs allocation") MutableGaugeInt pendingGPUs;
+  @Metric("Pending GPU allocation") MutableGaugeInt pendingGPUs;
   @Metric("# of pending containers") MutableGaugeInt pendingContainers;
   @Metric("# of reserved memory in MB") MutableGaugeInt reservedMB;
   @Metric("Reserved CPU in virtual cores") MutableGaugeInt reservedVCores;
-  @Metric("Reserved GPUs") MutableGaugeInt reservedGPUs;
+  @Metric("Reserved GPU") MutableGaugeInt reservedGPUs;
   @Metric("# of reserved containers") MutableGaugeInt reservedContainers;
   @Metric("# of active users") MutableGaugeInt activeUsers;
   @Metric("# of active applications") MutableGaugeInt activeApplications;
