@@ -123,10 +123,12 @@ public class TestStreamingLibrary {
         Assert.assertNotNull(rm.getResourceScheduler().getNodeReport(toCommit.getYarnRMNode().getNodeID()));
         int clusterMemory = rm.getResourceScheduler().getClusterResource().getMemory();
         int clusterVCores = rm.getResourceScheduler().getClusterResource().getVirtualCores();
+        int clusterGPUs = rm.getResourceScheduler().getClusterResource().getGPUs();
         int numOfNodes = rm.getResourceScheduler().getNumClusterNodes();
 
         Assert.assertEquals(toCommit.getYarnRMNode().getTotalCapability().getMemory(), clusterMemory);
         Assert.assertEquals(toCommit.getYarnRMNode().getTotalCapability().getVirtualCores(), clusterVCores);
+        Assert.assertEquals(toCommit.getYarnRMNode().getTotalCapability().getGPUs(), clusterGPUs);
         Assert.assertEquals(1, numOfNodes);
     }
 
@@ -167,11 +169,13 @@ public class TestStreamingLibrary {
 
         int clusterMemory = rm.getResourceScheduler().getClusterResource().getMemory();
         int clusterVCores = rm.getResourceScheduler().getClusterResource().getVirtualCores();
+        int clusterGPUs = rm.getResourceScheduler().getClusterResource().getGPUs();
         int numOfNodes = rm.getResourceScheduler().getNumClusterNodes();
 
         Assert.assertNull(rm.getResourceScheduler().getNodeReport(decNode.getYarnRMNode().getNodeID()));
         Assert.assertEquals(dummyNode.getYarnRMNode().getTotalCapability().getMemory(), clusterMemory);
         Assert.assertEquals(dummyNode.getYarnRMNode().getTotalCapability().getVirtualCores(), clusterVCores);
+        Assert.assertEquals(dummyNode.getYarnRMNode().getTotalCapability().getGPUs(), clusterGPUs);
         Assert.assertEquals(1, numOfNodes);
     }
 
@@ -235,6 +239,7 @@ public class TestStreamingLibrary {
                 rmNode.getNodeID().toString(),
                 rmNode.getTotalCapability().getMemory(),
                 rmNode.getTotalCapability().getVirtualCores(),
+                rmNode.getTotalCapability().getGPUs(),
                 id);
         contains ++;
         
