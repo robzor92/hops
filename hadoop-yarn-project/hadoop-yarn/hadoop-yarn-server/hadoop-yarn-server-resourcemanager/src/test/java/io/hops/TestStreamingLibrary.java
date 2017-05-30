@@ -215,7 +215,7 @@ public class TestStreamingLibrary {
                 1337,
                 8080,
                 new NodeBase("name", "/location"),
-                Resource.newInstance(6 * GB, 6),
+                Resource.newInstance(6 * GB, 6, 6),
                 "1.0");
         
         if (!NodeState.NEW.equals(state)) {
