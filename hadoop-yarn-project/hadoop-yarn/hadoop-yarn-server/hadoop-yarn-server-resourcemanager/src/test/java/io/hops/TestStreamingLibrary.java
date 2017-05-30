@@ -78,6 +78,7 @@ public class TestStreamingLibrary {
     }
 
     @Test
+    @Ignore
     public void testRMReceiveEvents() throws Exception {
         LOG.debug("Register NM1");
         MockNM nm1 = rm.registerNode("host0:1234", 4 * GB, 4);
@@ -96,6 +97,7 @@ public class TestStreamingLibrary {
         TimeUnit.SECONDS.sleep(4);
     }
 
+    @Ignore
     @Test
     public void testAddNode() throws Exception {
 
@@ -128,6 +130,7 @@ public class TestStreamingLibrary {
         Assert.assertEquals(1, numOfNodes);
     }
 
+    @Ignore
     @Test
     public void testRemoveNode() throws Exception {
         // First add a new node
