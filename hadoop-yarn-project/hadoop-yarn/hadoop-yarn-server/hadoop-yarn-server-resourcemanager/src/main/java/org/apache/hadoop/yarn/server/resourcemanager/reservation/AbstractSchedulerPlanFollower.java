@@ -162,7 +162,7 @@ public abstract class AbstractSchedulerPlanFollower implements PlanFollower {
         float targetCapacity = 0f;
         if (planResources.getMemory() > 0
             && planResources.getVirtualCores() > 0
-            && planResources.getGPUs() > 0) {
+            && planResources.getGPUs() >= 0) {
           targetCapacity =
               calculateReservationToPlanRatio(clusterResources,
                   planResources,
