@@ -81,9 +81,9 @@ public class TestStreamingLibrary {
     @Ignore
     public void testRMReceiveEvents() throws Exception {
         LOG.debug("Register NM1");
-        MockNM nm1 = rm.registerNode("host0:1234", 4 * GB, 4);
+        MockNM nm1 = rm.registerNode("host0:1234", 4 * GB, 4, 4);
         LOG.debug("Register NM2");
-        MockNM nm2 = rm.registerNode("host1:1234", 6 * GB, 6);
+        MockNM nm2 = rm.registerNode("host1:1234", 6 * GB, 6, 6);
 
         LOG.debug("Heartbeat NM1");
         nm1.nodeHeartbeat(true);
