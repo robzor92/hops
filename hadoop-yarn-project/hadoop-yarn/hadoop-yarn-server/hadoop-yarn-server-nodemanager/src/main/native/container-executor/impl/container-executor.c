@@ -2108,6 +2108,40 @@ int write_device_entry_to_cgroup_devices(const char* cgroup_file, const char* en
 #endif
 }
 
+int create_cgroup_hierarchy(const char* cgroup_path, const char* cgroup_hierarchy, const char* cgroup_group) {
+#ifndef __linux
+  uid_t user = geteuid();
+  gid_t group = getegid();
+  if (change_effective_user(0, 0) != 0) {
+    return -1;
+  }
+
+  const char* cpuHierarchyPath = cgroup_path + "/cpu/" + cgroup_hierarchy;
+  const char* devicesHierarchyPath = cgroup_path + "/devices/" + cgroup_hierarchy;
+
+  struct stat cpuCgroupDir;
+  struct stat devicesCgroupDir;
+
+  if (!((stat(cpuHierarchyPath, &cpuCgroupDir) == 0) && S_ISDIR(cpuCgroupDir.st_mode))) {
+    system("mkdir " + cpuHierarchyPath);
+    system("chown -R " + cgroup_group + ": " + cpuHierarchyPath);
+  }
+
+  if (!((stat(devicesHierarchyPath, &devicesCgroupDir) == 0) && S_ISDIR(devicesCgroupDir.st_mode)))  {
+    system("mkdir " + devicesHierarchyPath);
+        system("chown -R " + cgroup_group + ": " + devicesHierarchyPath);
+  }
+
+  // Revert back to the calling user.
+  if (change_effective_user(user, group)) {
+    return -1;
+  }
+
+  return 0;
+#endif
+}
+
+
 static int run_traffic_control(const char *opts[], char *command_file) {
   const int max_tc_args = 16;
   const char *args[max_tc_args];
