@@ -560,9 +560,6 @@ int main(int argc, char **argv) {
 
   int exit_code = 0;
 
-  fprintf(LOGFILE, "RUNNING\n");
-  fflush(LOGFILE);
-
   switch (operation) {
   case CHECK_SETUP:
     //we already did this

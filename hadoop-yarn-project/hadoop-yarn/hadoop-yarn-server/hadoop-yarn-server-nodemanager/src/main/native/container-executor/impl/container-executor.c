@@ -2115,43 +2115,30 @@ int create_cgroup_hierarchy(const char* cgroup_path, const char* cgroup_hierarch
     return -1;
   }
 
-  char cpuHierarchyPath[250];
-  char devicesHierarchyPath[250];
+  char cpuHierarchyPath[500];
+  char devicesHierarchyPath[500];
 
-  strcat(cpuHierarchyPath, cgroup_path);
+  strcpy(cpuHierarchyPath, cgroup_path);
   strcat(cpuHierarchyPath, "/cpu/");
   strcat(cpuHierarchyPath, cgroup_hierarchy);
 
-  strcat(devicesHierarchyPath, cgroup_path);
+  strcpy(devicesHierarchyPath, cgroup_path);
   strcat(devicesHierarchyPath, "/devices/");
   strcat(devicesHierarchyPath, cgroup_hierarchy);
 
   struct stat cpuCgroupDir;
   struct stat devicesCgroupDir;
 
-  if (!((stat(cpuHierarchyPath, &cpuCgroupDir) == 0) && S_ISDIR(cpuCgroupDir.st_mode))) {
-    mkdir(cpuHierarchyPath, 0755);
-    char cpuChown[250];
-    strcat(cpuChown, "chown -R ");
-    strcat(cpuChown, cgroup_group);
-    strcat(cpuChown, ":");
-    strcat(cpuChown, cgroup_group);
-    strcat(cpuChown, " ");
-    strcat(cpuChown, cpuHierarchyPath);
-    system(cpuChown);
-  }
+  DIR *dp;
+  struct dirent *ep;
 
-  if (!((stat(devicesHierarchyPath, &devicesCgroupDir) == 0) && S_ISDIR(devicesCgroupDir.st_mode)))  {
-    mkdir(devicesHierarchyPath, 0755);
-    char devicesChown[250];
-    strcat(devicesChown, "chown -R ");
-    strcat(devicesChown, cgroup_group);
-    strcat(devicesChown, ":");
-    strcat(devicesChown, cgroup_group);
-    strcat(devicesChown, " ");
-    strcat(devicesChown, devicesHierarchyPath);
-    system(devicesChown);
-  }
+  mkdir(cpuHierarchyPath, 0750);
+  chown(cpuHierarchyPath, nm_gid, nm_gid);
+  change_cgroup_ownership(cpuHierarchyPath);
+
+  mkdir(devicesHierarchyPath, 0750);
+  chown(devicesHierarchyPath, nm_gid, nm_gid);
+  change_cgroup_ownership(devicesHierarchyPath);
 
   // Revert back to the calling user.
   if (change_effective_user(user, group)) {
@@ -2161,6 +2148,28 @@ int create_cgroup_hierarchy(const char* cgroup_path, const char* cgroup_hierarch
   return 0;
 }
 
+void change_cgroup_ownership(char *path) {
+ DIR *dp;
+  struct dirent *ep;
+
+  char *path_tmp = malloc(strlen(path) + NAME_MAX + 2);
+    if (path_tmp == NULL) {
+      return;
+    }
+
+    char *buf = stpncpy(path_tmp, path, strlen(path));
+    *buf++ = '/';
+
+        dp = opendir(path);
+        if (dp != NULL) {
+          while ((ep = readdir(dp)) != NULL) {
+            stpncpy(buf, ep->d_name, strlen(ep->d_name));
+            buf[strlen(ep->d_name)] = '\0';
+            chown(path_tmp, nm_gid, nm_gid);
+          }
+          closedir(dp);
+        }
+}
 
 static int run_traffic_control(const char *opts[], char *command_file) {
   const int max_tc_args = 16;
