@@ -686,10 +686,5 @@ public class TestLinuxContainerExecutor {
     public void recoverDeviceControlSystem(ContainerId containerId) {
     
     }
-
-    @Override
-    public void initializeHierarchy(Configuration conf) {
-
-    }
   }
 }

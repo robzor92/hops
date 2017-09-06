@@ -2073,7 +2073,7 @@ int mount_cgroup(const char *pair, const char *hierarchy) {
  * cgroup_file: Path to cgroup file where device entry needs to be written to.
  */
 int write_device_entry_to_cgroup_devices(const char* cgroup_file, const char* entry) {
-
+#ifndef __linux
   uid_t user = geteuid();
   gid_t group = getegid();
   if (change_effective_user(0, 0) != 0) {
@@ -2105,62 +2105,8 @@ int write_device_entry_to_cgroup_devices(const char* cgroup_file, const char* en
   }
 
   return 0;
+#endif
 }
-
-int create_cgroup_hierarchy(const char* cgroup_path, const char* cgroup_hierarchy, const char* cgroup_group) {
-
-  uid_t user = geteuid();
-  gid_t group = getegid();
-  if (change_effective_user(0, 0) != 0) {
-    return -1;
-  }
-
-  char cpuHierarchyPath[250];
-  char devicesHierarchyPath[250];
-
-  strcat(cpuHierarchyPath, cgroup_path);
-  strcat(cpuHierarchyPath, "/cpu/");
-  strcat(cpuHierarchyPath, cgroup_hierarchy);
-
-  strcat(devicesHierarchyPath, cgroup_path);
-  strcat(devicesHierarchyPath, "/devices/");
-  strcat(devicesHierarchyPath, cgroup_hierarchy);
-
-  struct stat cpuCgroupDir;
-  struct stat devicesCgroupDir;
-
-  if (!((stat(cpuHierarchyPath, &cpuCgroupDir) == 0) && S_ISDIR(cpuCgroupDir.st_mode))) {
-    mkdir(cpuHierarchyPath, 0755);
-    char cpuChown[250];
-    strcat(cpuChown, "chown -R ");
-    strcat(cpuChown, cgroup_group);
-    strcat(cpuChown, ":");
-    strcat(cpuChown, cgroup_group);
-    strcat(cpuChown, " ");
-    strcat(cpuChown, cpuHierarchyPath);
-    system(cpuChown);
-  }
-
-  if (!((stat(devicesHierarchyPath, &devicesCgroupDir) == 0) && S_ISDIR(devicesCgroupDir.st_mode)))  {
-    mkdir(devicesHierarchyPath, 0755);
-    char devicesChown[250];
-    strcat(devicesChown, "chown -R ");
-    strcat(devicesChown, cgroup_group);
-    strcat(devicesChown, ":");
-    strcat(devicesChown, cgroup_group);
-    strcat(devicesChown, " ");
-    strcat(devicesChown, devicesHierarchyPath);
-    system(devicesChown);
-  }
-
-  // Revert back to the calling user.
-  if (change_effective_user(user, group)) {
-    return -1;
-  }
-
-  return 0;
-}
-
 
 static int run_traffic_control(const char *opts[], char *command_file) {
   const int max_tc_args = 16;

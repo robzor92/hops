@@ -70,9 +70,4 @@ public class DefaultLCEResourcesHandler implements LCEResourcesHandler {
   public void recoverDeviceControlSystem(ContainerId containerId) {
     LOG.warn("DefaultLCEResourcesHandler does not support device recovery");
   }
-
-  @Override
-  public void initializeHierarchy(Configuration conf) {
-
-  }
 }
