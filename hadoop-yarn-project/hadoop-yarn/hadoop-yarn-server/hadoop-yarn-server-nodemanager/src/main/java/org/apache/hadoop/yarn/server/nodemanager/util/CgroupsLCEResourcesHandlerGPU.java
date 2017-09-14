@@ -198,7 +198,7 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
       throws IOException {
     initConfig();
 
-    if (isGpuSupportEnabled() && getGPUAllocator() == null || !getGPUAllocator().isInitialized()) {
+    if (isGpuSupportEnabled() && (getGPUAllocator() == null || !getGPUAllocator().isInitialized())) {
       gpuAllocator = GPUAllocator.getInstance();
       getGPUAllocator().initialize(conf);
     }
