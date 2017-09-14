@@ -137,7 +137,6 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
     
   }
 
-  @Override
   public void setExecutablePath(String path) {
     this.executablePath = path;
   }
@@ -405,7 +404,6 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
       } catch (IOException e) {
         e.printStackTrace();
       }
-      return;
     }
 
     String path = pathForCgroup(controller, groupName);
@@ -656,28 +654,6 @@ public class CgroupsLCEResourcesHandlerGPU implements LCEResourcesHandler {
       } catch (IOException e) {
         LOG.error("Could not retrieve contents of file in path " + container
             .getAbsolutePath(), e);
-      }
-    }
-  }
-
-  @Override
-  public void initializeHierarchy(Configuration conf) {
-
-    if(executablePath != null) {
-
-      String cgroupPath = conf.get(YarnConfiguration.NM_LINUX_CONTAINER_CGROUPS_MOUNT_PATH);
-      String hierarchyName = conf.get(YarnConfiguration.NM_LINUX_CONTAINER_CGROUPS_HIERARCHY);
-      String group = conf.get(YarnConfiguration.NM_LINUX_CONTAINER_GROUP);
-
-      List<String> command = new ArrayList<>();
-      command.addAll(Arrays.asList(executablePath, "--create-hierarchy", cgroupPath, hierarchyName, group));
-
-      String[] commandArray = command.toArray(new String[command.size()]);
-      Shell.ShellCommandExecutor shExec = new Shell.ShellCommandExecutor(commandArray, null);
-      try {
-        shExec.execute();
-      } catch (IOException e) {
-        e.printStackTrace();
       }
     }
   }
