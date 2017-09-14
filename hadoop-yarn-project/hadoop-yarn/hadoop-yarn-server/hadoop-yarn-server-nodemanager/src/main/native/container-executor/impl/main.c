@@ -284,6 +284,7 @@ static int validate_arguments(int argc, char **argv , int *operation) {
     optind++;
     cmd_input.cgroups_path = argv[optind++];
     *operation = WRITE_DEVICES;
+    return 0;
   }
 
   if(strcmp("--create-hierarchy", argv[1]) == 0) {
@@ -295,6 +296,7 @@ static int validate_arguments(int argc, char **argv , int *operation) {
     cmd_input.cgroups_path = argv[optind++];
     cmd_input.cgroups_hierarchy = argv[optind++];
     *operation = CREATE_HIERARCHY;
+    return 0;
   }
 
   if (strcmp("--tc-modify-state", argv[1]) == 0) {
@@ -371,10 +373,6 @@ static int validate_arguments(int argc, char **argv , int *operation) {
 static int validate_run_as_user_commands(int argc, char **argv, int *operation) {
   /* We need at least the following arguments in order to proceed further :
     <user>, <yarn-user> <command> - i.e at argc should be at least 4 */
-
-  if(*operation==WRITE_DEVICES || *operation==CREATE_HIERARCHY) {
-    return 0;
-  }
 
   if (argc < 4) {
     display_usage(stdout);
@@ -573,10 +571,10 @@ int main(int argc, char **argv) {
     break;
   case WRITE_DEVICES:
     exit_code = write_device_entry_to_cgroup_devices(cmd_input.cgroups_path, argv[optind++]);
-    return exit_code;
+    break;
   case CREATE_HIERARCHY:
     exit_code = create_cgroup_hierarchy(cmd_input.cgroups_path, cmd_input.cgroups_hierarchy, argv[optind++]);
-    return exit_code;
+    break;
   case TRAFFIC_CONTROL_MODIFY_STATE:
     exit_code = traffic_control_modify_state(cmd_input.traffic_control_command_file);
     break;
