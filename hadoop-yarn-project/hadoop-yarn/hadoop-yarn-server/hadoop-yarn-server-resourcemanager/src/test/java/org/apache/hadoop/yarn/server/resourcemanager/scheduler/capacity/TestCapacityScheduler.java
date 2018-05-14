@@ -2468,6 +2468,7 @@ public class TestCapacityScheduler {
     // per queue to be smaller than previous setting
     CapacityScheduler cs = new CapacityScheduler();
     CapacitySchedulerConfiguration conf = new CapacitySchedulerConfiguration();
+    conf.setResourceComparator(DominantResourceCalculatorGPU.class);
     setupQueueConfiguration(conf);
     cs.setConf(new YarnConfiguration());
     cs.setRMContext(resourceManager.getRMContext());
@@ -2491,6 +2492,8 @@ public class TestCapacityScheduler {
     CSQueue queueA1 = findQueue(queueA, A1);
     assertEquals("queue max allocation", ((LeafQueue) queueA1)
         .getMaximumAllocation().getMemorySize(), 8192);
+    assertEquals("queue max gpu allocation",
+            cs.getMaximumResourceCapability().getGPUs(), 8);
 
     setMaxAllocMb(conf, A1, 4096);
 
